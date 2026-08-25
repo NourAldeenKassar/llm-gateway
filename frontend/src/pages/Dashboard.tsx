@@ -100,6 +100,9 @@ export default function Dashboard() {
                       <div className="flex items-center gap-3">
                         <ProviderIcon name={p.name} size={22} />
                         <span className="font-medium">{p.displayName}</span>
+                        <span className={cn('text-xs px-1.5 py-0.5 rounded-full', p.isPaid ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success')}>
+                          {p.isPaid ? 'Paid' : 'Free'}
+                        </span>
                         {p.error && (
                           <span className="text-destructive text-xs truncate max-w-48" title={p.error}>
                             {p.error}

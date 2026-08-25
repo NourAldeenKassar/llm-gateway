@@ -5,6 +5,7 @@ import { ProviderFactory } from '../providers/provider.factory';
 export interface ProviderHealth {
   name: string;
   displayName: string;
+  isPaid: boolean;
   status: 'healthy' | 'unhealthy';
   latencyMs: number | null;
   error: string | null;
@@ -64,6 +65,7 @@ export class HealthService {
           return {
             name: config.name,
             displayName: config.displayName,
+            isPaid: config.isPaid,
             status: 'healthy',
             latencyMs: Date.now() - start,
             error: null,
@@ -73,6 +75,7 @@ export class HealthService {
           return {
             name: config.name,
             displayName: config.displayName,
+            isPaid: config.isPaid,
             status: 'unhealthy',
             latencyMs: Date.now() - start,
             error: err instanceof Error ? err.message : String(err),

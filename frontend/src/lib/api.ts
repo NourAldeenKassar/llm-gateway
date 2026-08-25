@@ -127,6 +127,7 @@ export async function deleteConversation(id: string) {
 export interface ProviderHealth {
   name: string
   displayName: string
+  isPaid: boolean
   status: 'healthy' | 'unhealthy'
   latencyMs: number | null
   error: string | null
