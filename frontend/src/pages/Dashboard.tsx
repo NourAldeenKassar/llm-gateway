@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { listProviders, getHealth, runHealthCheck, type Provider, type HealthStatus } from '@/lib/api'
 import { CheckCircle, XCircle, RefreshCw, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import ProviderIcon from '@/components/ProviderIcon'
 
 export default function Dashboard() {
   const [providers, setProviders] = useState<Provider[]>([])
@@ -88,21 +89,24 @@ export default function Dashboard() {
                 )}
               >
                 <div className="flex items-center gap-3">
-                  {p.status === 'healthy' ? (
-                    <CheckCircle size={16} className="text-success" />
-                  ) : (
-                    <XCircle size={16} className="text-destructive" />
-                  )}
-                  <span className="text-sm font-medium">{p.displayName}</span>
+                  <ProviderIcon name={p.name} size={28} />
+                  <div>
+                    <span className="text-sm font-medium">{p.displayName}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  {p.latencyMs !== null && (
-                    <span>{p.latencyMs}ms</span>
-                  )}
+                <div className="flex items-center gap-3">
                   {p.error && (
-                    <span className="text-destructive text-xs max-w-xs truncate" title={p.error}>
+                    <span className="text-destructive text-xs max-w-48 truncate" title={p.error}>
                       {p.error}
                     </span>
+                  )}
+                  {p.latencyMs !== null && (
+                    <span className="text-sm text-muted-foreground font-mono">{p.latencyMs}ms</span>
+                  )}
+                  {p.status === 'healthy' ? (
+                    <CheckCircle size={18} className="text-success" />
+                  ) : (
+                    <XCircle size={18} className="text-destructive" />
                   )}
                 </div>
               </div>
@@ -126,7 +130,8 @@ export default function Dashboard() {
               )}
             >
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                  <ProviderIcon name={p.name} size={32} />
                   <span className="font-medium">{p.displayName}</span>
                   <span className={cn('text-xs px-2 py-0.5 rounded-full', p.isPaid ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success')}>
                     {p.isPaid ? 'Paid' : 'Free'}
