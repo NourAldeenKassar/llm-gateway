@@ -28,10 +28,11 @@ export default function Providers() {
 
   useEffect(() => { load() }, [])
 
-  const handleAdd = async (preset: typeof PROVIDER_PRESETS[0], apiKey: string) => {
+  const handleAdd = async (preset: typeof PROVIDER_PRESETS[0], apiKey: string, isPaid: boolean) => {
     await createProvider({
       ...preset,
       apiKey,
+      isPaid,
       baseUrl: preset.baseUrl,
       enabled: true,
       priority: providers.length,
@@ -42,6 +43,11 @@ export default function Providers() {
 
   const handleToggle = async (p: Provider) => {
     await updateProvider(p.id, { enabled: !p.enabled })
+    load()
+  }
+
+  const handleTogglePaid = async (p: Provider) => {
+    await updateProvider(p.id, { isPaid: !p.isPaid })
     load()
   }
 
@@ -88,9 +94,13 @@ export default function Providers() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 <span className="font-medium">{p.displayName}</span>
-                <span className={cn('text-xs px-2 py-0.5 rounded-full', p.isPaid ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success')}>
+                <button
+                  onClick={() => handleTogglePaid(p)}
+                  className={cn('text-xs px-2 py-0.5 rounded-full cursor-pointer hover:opacity-70 transition-opacity', p.isPaid ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success')}
+                  title="Click to toggle free/paid"
+                >
                   {p.isPaid ? 'Paid' : 'Free'}
-                </span>
+                </button>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -141,9 +151,10 @@ export default function Providers() {
   )
 }
 
-function AddProviderPanel({ presets, onAdd }: { presets: typeof PROVIDER_PRESETS; onAdd: (preset: typeof PROVIDER_PRESETS[0], apiKey: string) => void }) {
+function AddProviderPanel({ presets, onAdd }: { presets: typeof PROVIDER_PRESETS; onAdd: (preset: typeof PROVIDER_PRESETS[0], apiKey: string, isPaid: boolean) => void }) {
   const [selected, setSelected] = useState<typeof PROVIDER_PRESETS[0] | null>(null)
   const [apiKey, setApiKey] = useState('')
+  const [isPaid, setIsPaid] = useState(false)
 
   return (
     <div className="border border-border rounded-lg p-4 mb-6">
@@ -152,7 +163,7 @@ function AddProviderPanel({ presets, onAdd }: { presets: typeof PROVIDER_PRESETS
         {presets.map((p) => (
           <button
             key={p.name}
-            onClick={() => { setSelected(p); setApiKey('') }}
+            onClick={() => { setSelected(p); setApiKey(''); setIsPaid(p.isPaid) }}
             className={cn(
               'px-3 py-2 rounded-md text-sm border transition-colors',
               selected?.name === p.name
@@ -166,21 +177,32 @@ function AddProviderPanel({ presets, onAdd }: { presets: typeof PROVIDER_PRESETS
       </div>
 
       {selected && (
-        <div className="flex gap-2">
-          <input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder={`${selected.displayName} API key`}
-            className="flex-1 px-3 py-2 rounded-md border border-border bg-background text-sm outline-none focus:border-primary"
-          />
-          <button
-            onClick={() => onAdd(selected, apiKey)}
-            disabled={!apiKey}
-            className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
-          >
-            Add
-          </button>
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-2">
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder={`${selected.displayName} API key`}
+              className="flex-1 px-3 py-2 rounded-md border border-border bg-background text-sm outline-none focus:border-primary"
+            />
+            <button
+              onClick={() => onAdd(selected, apiKey, isPaid)}
+              disabled={!apiKey}
+              className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              Add
+            </button>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={isPaid}
+              onChange={(e) => setIsPaid(e.target.checked)}
+              className="w-3.5 h-3.5 rounded border-border"
+            />
+            Paid provider (excluded when freeOnly is enabled)
+          </label>
         </div>
       )}
     </div>
