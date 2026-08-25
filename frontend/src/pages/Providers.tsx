@@ -8,7 +8,7 @@ import {
   type Provider,
   type TestResult,
 } from '@/lib/api'
-import { Plus, Trash2, FlaskConical, X } from 'lucide-react'
+import { Plus, Trash2, FlaskConical, X, Pencil, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const PROVIDER_PRESETS = [
@@ -23,6 +23,8 @@ export default function Providers() {
   const [showAdd, setShowAdd] = useState(false)
   const [testResults, setTestResults] = useState<Record<string, TestResult>>({})
   const [testing, setTesting] = useState<Record<string, boolean>>({})
+  const [editing, setEditing] = useState<string | null>(null)
+  const [editValues, setEditValues] = useState<Partial<Provider>>({})
 
   const load = () => listProviders().then(setProviders).catch(() => {})
 
@@ -48,6 +50,28 @@ export default function Providers() {
 
   const handleTogglePaid = async (p: Provider) => {
     await updateProvider(p.id, { isPaid: !p.isPaid })
+    load()
+  }
+
+  const handleEdit = (p: Provider) => {
+    setEditing(p.id)
+    setEditValues({
+      displayName: p.displayName,
+      defaultModel: p.defaultModel,
+      priority: p.priority,
+      apiKey: '',
+    })
+  }
+
+  const handleSaveEdit = async (id: string) => {
+    const updates: Partial<Provider> = {}
+    if (editValues.displayName) updates.displayName = editValues.displayName
+    if (editValues.defaultModel) updates.defaultModel = editValues.defaultModel
+    if (editValues.priority !== undefined) updates.priority = editValues.priority
+    if (editValues.apiKey) updates.apiKey = editValues.apiKey
+
+    await updateProvider(id, updates)
+    setEditing(null)
     load()
   }
 
@@ -123,6 +147,13 @@ export default function Providers() {
                   {testing[p.id] ? 'Testing...' : 'Test'}
                 </button>
                 <button
+                  onClick={() => editing === p.id ? handleSaveEdit(p.id) : handleEdit(p)}
+                  className="flex items-center gap-1 text-xs px-3 py-1 rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  {editing === p.id ? <Check size={12} /> : <Pencil size={12} />}
+                  {editing === p.id ? 'Save' : 'Edit'}
+                </button>
+                <button
                   onClick={() => handleDelete(p.id)}
                   className="text-xs px-2 py-1 rounded-md text-destructive hover:bg-destructive/10 transition-colors"
                 >
@@ -130,12 +161,53 @@ export default function Providers() {
                 </button>
               </div>
             </div>
-            <div className="text-sm text-muted-foreground grid grid-cols-2 md:grid-cols-4 gap-2">
-              <div>Model: {p.defaultModel}</div>
-              <div>Type: {p.type}</div>
-              <div>Priority: {p.priority}</div>
-              <div>Key: {p.apiKey}</div>
-            </div>
+
+            {editing === p.id ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Display Name</label>
+                  <input
+                    value={editValues.displayName || ''}
+                    onChange={(e) => setEditValues({ ...editValues, displayName: e.target.value })}
+                    className="w-full px-2 py-1.5 rounded-md border border-border bg-background text-sm outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Default Model</label>
+                  <input
+                    value={editValues.defaultModel || ''}
+                    onChange={(e) => setEditValues({ ...editValues, defaultModel: e.target.value })}
+                    className="w-full px-2 py-1.5 rounded-md border border-border bg-background text-sm outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Priority</label>
+                  <input
+                    type="number"
+                    value={editValues.priority ?? 0}
+                    onChange={(e) => setEditValues({ ...editValues, priority: parseInt(e.target.value) || 0 })}
+                    className="w-full px-2 py-1.5 rounded-md border border-border bg-background text-sm outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">New API Key (leave empty to keep)</label>
+                  <input
+                    type="password"
+                    value={editValues.apiKey || ''}
+                    onChange={(e) => setEditValues({ ...editValues, apiKey: e.target.value })}
+                    placeholder="unchanged"
+                    className="w-full px-2 py-1.5 rounded-md border border-border bg-background text-sm outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div>Model: {p.defaultModel}</div>
+                <div>Type: {p.type}</div>
+                <div>Priority: {p.priority}</div>
+                <div>Key: {p.apiKey}</div>
+              </div>
+            )}
 
             {testResults[p.id] && (
               <div className={cn('mt-3 text-sm p-2 rounded-md', testResults[p.id].success ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive')}>
