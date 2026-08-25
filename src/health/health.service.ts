@@ -52,35 +52,35 @@ export class HealthService {
       .findMany({ where: { enabled: true }, orderBy: { priority: 'asc' } })
       .catch(() => []);
 
-    const providers: ProviderHealth[] = [];
-
-    for (const config of configs) {
-      const start = Date.now();
-      try {
-        const provider = this.providerFactory.createFromConfig(config);
-        await provider.chat({
-          messages: [{ role: 'user', content: 'Say ok' }],
-          max_tokens: 5,
-        });
-        providers.push({
-          name: config.name,
-          displayName: config.displayName,
-          status: 'healthy',
-          latencyMs: Date.now() - start,
-          error: null,
-          checkedAt: new Date().toISOString(),
-        });
-      } catch (err) {
-        providers.push({
-          name: config.name,
-          displayName: config.displayName,
-          status: 'unhealthy',
-          latencyMs: Date.now() - start,
-          error: err instanceof Error ? err.message : String(err),
-          checkedAt: new Date().toISOString(),
-        });
-      }
-    }
+    const providers = await Promise.all(
+      configs.map(async (config): Promise<ProviderHealth> => {
+        const start = Date.now();
+        try {
+          const provider = this.providerFactory.createFromConfig(config);
+          await provider.chat({
+            messages: [{ role: 'user', content: 'Say ok' }],
+            max_tokens: 5,
+          });
+          return {
+            name: config.name,
+            displayName: config.displayName,
+            status: 'healthy',
+            latencyMs: Date.now() - start,
+            error: null,
+            checkedAt: new Date().toISOString(),
+          };
+        } catch (err) {
+          return {
+            name: config.name,
+            displayName: config.displayName,
+            status: 'unhealthy',
+            latencyMs: Date.now() - start,
+            error: err instanceof Error ? err.message : String(err),
+            checkedAt: new Date().toISOString(),
+          };
+        }
+      }),
+    );
 
     const healthyCount = providers.filter((p) => p.status === 'healthy').length;
     let status: 'healthy' | 'degraded' | 'unhealthy' = 'unhealthy';
