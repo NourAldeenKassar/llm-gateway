@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   listProviders,
+  listModels,
   createProvider,
   updateProvider,
   deleteProvider,
@@ -25,6 +26,8 @@ export default function Providers() {
   const [testing, setTesting] = useState<Record<string, boolean>>({})
   const [editing, setEditing] = useState<string | null>(null)
   const [editValues, setEditValues] = useState<Partial<Provider>>({})
+  const [editModels, setEditModels] = useState<string[]>([])
+  const [loadingModels, setLoadingModels] = useState(false)
 
   const load = () => listProviders().then(setProviders).catch(() => {})
 
@@ -68,6 +71,11 @@ export default function Providers() {
       priority: p.priority,
       apiKey: '',
     })
+    setLoadingModels(true)
+    listModels(p.id)
+      .then(setEditModels)
+      .catch(() => setEditModels([p.defaultModel]))
+      .finally(() => setLoadingModels(false))
   }
 
   const handleSaveEdit = async (id: string) => {
@@ -176,11 +184,20 @@ export default function Providers() {
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Default Model</label>
-                  <input
+                  <select
                     value={editValues.defaultModel || ''}
                     onChange={(e) => setEditValues({ ...editValues, defaultModel: e.target.value })}
-                    className="w-full px-2 py-1.5 rounded-md border border-border bg-background text-sm outline-none focus:border-primary"
-                  />
+                    disabled={loadingModels}
+                    className="w-full px-2 py-1.5 rounded-md border border-border bg-background text-sm outline-none focus:border-primary disabled:opacity-50"
+                  >
+                    {loadingModels ? (
+                      <option>Loading...</option>
+                    ) : (
+                      editModels.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))
+                    )}
+                  </select>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Priority</label>
