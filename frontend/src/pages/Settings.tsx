@@ -5,29 +5,16 @@ import { cn } from '@/lib/utils'
 export default function Settings() {
   const [config, setConfig] = useState<GatewayConfig | null>(null)
   const [providers, setProviders] = useState<Provider[]>([])
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     getConfig().then(setConfig).catch(() => {})
     listProviders().then(setProviders).catch(() => {})
   }, [])
 
-  const handleSave = async () => {
+  const save = async (updates: Partial<GatewayConfig>) => {
     if (!config) return
-    setSaving(true)
-    setSaved(false)
-    try {
-      const updated = await updateConfig({
-        defaultProvider: config.defaultProvider,
-        freeOnlyDefault: config.freeOnlyDefault,
-      })
-      setConfig(updated)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
-    } finally {
-      setSaving(false)
-    }
+    const updated = await updateConfig(updates)
+    setConfig(updated)
   }
 
   if (!config) return null
@@ -43,7 +30,7 @@ export default function Settings() {
           <label className="block text-sm font-medium mb-3">Default Provider</label>
           <select
             value={config.defaultProvider || ''}
-            onChange={(e) => setConfig({ ...config, defaultProvider: e.target.value || null })}
+            onChange={(e) => save({ defaultProvider: e.target.value || null })}
             className="w-full h-10 px-3 rounded-lg border border-border bg-muted/30 text-sm outline-none focus:border-primary transition-colors"
           >
             <option value="">None (use fallback chain)</option>
@@ -67,7 +54,7 @@ export default function Settings() {
               </p>
             </div>
             <button
-              onClick={() => setConfig({ ...config, freeOnlyDefault: !config.freeOnlyDefault })}
+              onClick={() => save({ freeOnlyDefault: !config.freeOnlyDefault })}
               className={cn(
                 'relative w-11 h-6 rounded-full transition-colors shrink-0 ml-4',
                 config.freeOnlyDefault ? 'bg-success' : 'bg-border',
@@ -80,20 +67,6 @@ export default function Settings() {
             </button>
           </div>
         </div>
-
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className={cn(
-            'w-full h-10 rounded-lg text-sm font-medium transition-all',
-            saved
-              ? 'bg-success text-white'
-              : 'bg-primary text-primary-foreground hover:opacity-90',
-            saving && 'opacity-50',
-          )}
-        >
-          {saving ? 'Saving...' : saved ? 'Saved' : 'Save Settings'}
-        </button>
       </div>
     </div>
   )
