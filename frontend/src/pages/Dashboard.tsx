@@ -1,30 +1,115 @@
 import { useState, useEffect } from 'react'
-import { listProviders, getHealth, type Provider } from '@/lib/api'
-import { CheckCircle, XCircle, Zap, DollarSign } from 'lucide-react'
+import { listProviders, getHealth, runHealthCheck, type Provider, type HealthStatus } from '@/lib/api'
+import { CheckCircle, XCircle, Zap, DollarSign, RefreshCw, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function Dashboard() {
   const [providers, setProviders] = useState<Provider[]>([])
-  const [health, setHealth] = useState<{ status: string; checks: Record<string, string> } | null>(null)
+  const [health, setHealth] = useState<HealthStatus | null>(null)
+  const [checking, setChecking] = useState(false)
 
   useEffect(() => {
     listProviders().then(setProviders).catch(() => {})
     getHealth().then(setHealth).catch(() => {})
   }, [])
 
+  const handleRunCheck = async () => {
+    setChecking(true)
+    try {
+      const result = await runHealthCheck()
+      setHealth(result)
+    } catch {
+      // ignore
+    } finally {
+      setChecking(false)
+    }
+  }
+
   const enabledCount = providers.filter((p) => p.enabled).length
   const freeCount = providers.filter((p) => p.enabled && !p.isPaid).length
   const paidCount = providers.filter((p) => p.enabled && p.isPaid).length
+
+  const statusLabel = health?.status === 'healthy'
+    ? 'Healthy'
+    : health?.status === 'degraded'
+      ? 'Degraded'
+      : health?.status === 'unhealthy'
+        ? 'Unhealthy'
+        : 'Unchecked'
+
+  const statusColor = health?.status === 'healthy'
+    ? 'success'
+    : health?.status === 'degraded'
+      ? 'warning'
+      : health?.status === 'unhealthy'
+        ? 'destructive'
+        : 'muted-foreground'
 
   return (
     <div>
       <h2 className="text-xl font-semibold mb-6">Dashboard</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <StatCard label="System" value={health?.status === 'ok' ? 'Healthy' : 'Degraded'} color={health?.status === 'ok' ? 'success' : 'warning'} />
+        <div className="border border-border rounded-lg p-4">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm text-muted-foreground">System</p>
+            <button
+              onClick={handleRunCheck}
+              disabled={checking}
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
+              title="Run health check on all providers"
+            >
+              <RefreshCw size={12} className={checking ? 'animate-spin' : ''} />
+              {checking ? 'Checking...' : 'Check'}
+            </button>
+          </div>
+          <p className={cn('text-lg font-semibold', `text-${statusColor}`)}>{statusLabel}</p>
+          {health?.lastCheck && (
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <Clock size={10} />
+              {new Date(health.lastCheck).toLocaleTimeString()}
+            </p>
+          )}
+        </div>
         <StatCard label="Active Providers" value={String(enabledCount)} color="primary" />
         <StatCard label="Free / Paid" value={`${freeCount} / ${paidCount}`} color="primary" />
       </div>
+
+      {health && health.providers.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-lg font-medium mb-4">Provider Health</h3>
+          <div className="flex flex-col gap-2">
+            {health.providers.map((p) => (
+              <div
+                key={p.name}
+                className={cn(
+                  'flex items-center justify-between border rounded-lg px-4 py-3',
+                  p.status === 'healthy' ? 'border-success/30' : 'border-destructive/30',
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  {p.status === 'healthy' ? (
+                    <CheckCircle size={16} className="text-success" />
+                  ) : (
+                    <XCircle size={16} className="text-destructive" />
+                  )}
+                  <span className="text-sm font-medium">{p.displayName}</span>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  {p.latencyMs !== null && (
+                    <span>{p.latencyMs}ms</span>
+                  )}
+                  {p.error && (
+                    <span className="text-destructive text-xs max-w-xs truncate" title={p.error}>
+                      {p.error}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <h3 className="text-lg font-medium mb-4">Providers</h3>
 

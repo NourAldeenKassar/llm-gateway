@@ -1,33 +1,19 @@
-import { Controller, Get } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { ProviderFactory } from '../providers/provider.factory';
+import { Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { HealthService } from './health.service';
+import { AdminGuard } from '../auth/admin.guard';
 
 @Controller('api/health')
 export class HealthController {
-  constructor(
-    private prisma: PrismaService,
-    private providerFactory: ProviderFactory,
-  ) {}
+  constructor(private healthService: HealthService) {}
 
   @Get()
-  async check() {
-    const checks: Record<string, string> = {};
+  getHealth() {
+    return this.healthService.getHealth();
+  }
 
-    try {
-      await this.prisma.$queryRaw`SELECT 1`;
-      checks.database = 'ok';
-    } catch {
-      checks.database = 'error';
-    }
-
-    const providers = await this.providerFactory.getEnabledProviders();
-    checks.providers = `${providers.length} enabled`;
-
-    const healthy = checks.database === 'ok';
-
-    return {
-      status: healthy ? 'ok' : 'degraded',
-      checks,
-    };
+  @Post('check')
+  @UseGuards(AdminGuard)
+  async runCheck() {
+    return this.healthService.runCheck();
   }
 }

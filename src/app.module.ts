@@ -7,7 +7,7 @@ import { ProvidersModule } from './providers/providers.module';
 import { RouterModule } from './router/router.module';
 import { GatewayModule } from './gateway/gateway.module';
 import { AdminModule } from './admin/admin.module';
-import { HealthController } from './health/health.controller';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -23,7 +23,7 @@ import { HealthController } from './health/health.controller';
     RouterModule,
     GatewayModule,
     AdminModule,
+    HealthModule,
   ],
-  controllers: [HealthController],
 })
 export class AppModule {}

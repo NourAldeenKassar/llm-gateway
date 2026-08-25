@@ -124,7 +124,28 @@ export async function deleteConversation(id: string) {
   return data
 }
 
-export async function getHealth() {
+export interface ProviderHealth {
+  name: string
+  displayName: string
+  status: 'healthy' | 'unhealthy'
+  latencyMs: number | null
+  error: string | null
+  checkedAt: string
+}
+
+export interface HealthStatus {
+  status: 'healthy' | 'degraded' | 'unhealthy' | 'unchecked'
+  database: 'ok' | 'error'
+  providers: ProviderHealth[]
+  lastCheck: string | null
+}
+
+export async function getHealth(): Promise<HealthStatus> {
   const { data } = await api.get('/api/health')
+  return data
+}
+
+export async function runHealthCheck(): Promise<HealthStatus> {
+  const { data } = await api.post('/api/health/check')
   return data
 }
