@@ -20,7 +20,7 @@ import { AdminGuard } from '../auth/admin.guard';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { UpdateConfigDto } from './dto/update-config.dto';
-import { GenerateDto } from '../gateway/dto/generate.dto';
+import { AdminChatDto } from './dto/admin-chat.dto';
 import { ChatMessage } from '../providers/provider.interface';
 
 @Controller('api/admin')
@@ -211,7 +211,7 @@ export class AdminController {
 
   @Post('chat')
   @UseGuards(AdminGuard)
-  async chat(@Body() body: GenerateDto) {
+  async chat(@Body() body: AdminChatDto) {
     const messages: ChatMessage[] = [];
 
     if (body.system) {
