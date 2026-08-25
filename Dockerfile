@@ -29,9 +29,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+RUN npx prisma generate
+
+COPY --from=builder /app/dist ./dist
 COPY --from=frontend-builder /app/frontend/dist ./public
 
 EXPOSE 3000
