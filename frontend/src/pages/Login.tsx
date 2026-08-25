@@ -28,7 +28,10 @@ export default function Login({ onLogin }: LoginProps) {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold text-center mb-8">LLM Gateway</h1>
+        <div className="flex flex-col items-center gap-3 mb-8">
+          <img src="/favicon.svg" alt="LLM Gateway" className="w-12 h-12" />
+          <h1 className="text-2xl font-semibold">LLM Gateway</h1>
+        </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input

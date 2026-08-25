@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <g fill="none" stroke="white" stroke-width="3" stroke-linecap="round">
+    <!-- center node -->
+    <circle cx="32" cy="32" r="6" fill="white" stroke="none"/>
+    <!-- top node -->
+    <circle cx="32" cy="12" r="4" fill="white" stroke="none"/>
+    <line x1="32" y1="16" x2="32" y2="26"/>
+    <!-- bottom-left node -->
+    <circle cx="15" cy="48" r="4" fill="white" stroke="none"/>
+    <line x1="18" y1="45.5" x2="27.5" y2="35.5"/>
+    <!-- bottom-right node -->
+    <circle cx="49" cy="48" r="4" fill="white" stroke="none"/>
+    <line x1="46" y1="45.5" x2="36.5" y2="35.5"/>
+    <!-- right node -->
+    <circle cx="52" cy="22" r="4" fill="white" stroke="none"/>
+    <line x1="48.5" y1="24.5" x2="37.5" y2="30"/>
+    <!-- left node -->
+    <circle cx="12" cy="22" r="4" fill="white" stroke="none"/>
+    <line x1="15.5" y1="24.5" x2="26.5" y2="30"/>
+  </g>
+</svg>

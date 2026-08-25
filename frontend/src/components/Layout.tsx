@@ -23,7 +23,10 @@ export default function Layout({ onLogout }: LayoutProps) {
   return (
     <div className="flex min-h-screen">
       <aside className="w-56 border-r border-border bg-muted/30 p-4 flex flex-col">
-        <h1 className="text-lg font-semibold mb-8 px-2">LLM Gateway</h1>
+        <div className="flex items-center gap-3 mb-8 px-2">
+          <img src="/favicon.svg" alt="LLM Gateway" className="w-8 h-8" />
+          <h1 className="text-lg font-semibold">LLM Gateway</h1>
+        </div>
 
         <nav className="flex flex-col gap-1 flex-1">
           {navItems.map(({ to, icon: Icon, label }) => (
