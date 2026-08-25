@@ -15,16 +15,20 @@ import { Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProviderFactory } from '../providers/provider.factory';
+import { RouterService } from '../router/router.service';
 import { AdminGuard } from '../auth/admin.guard';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { UpdateConfigDto } from './dto/update-config.dto';
+import { GenerateDto } from '../gateway/dto/generate.dto';
+import { ChatMessage } from '../providers/provider.interface';
 
 @Controller('api/admin')
 export class AdminController {
   constructor(
     private prisma: PrismaService,
     private providerFactory: ProviderFactory,
+    private router: RouterService,
     private config: ConfigService,
   ) {}
 
@@ -156,6 +160,83 @@ export class AdminController {
     });
 
     return config;
+  }
+
+  @Get('providers/:id/models')
+  @UseGuards(AdminGuard)
+  async listModels(@Param('id') id: string) {
+    const config = await this.prisma.provider.findUnique({ where: { id } });
+    if (!config) {
+      throw new HttpException('Provider not found', 404);
+    }
+
+    try {
+      if (config.type === 'openai-compat') {
+        const OpenAI = (await import('openai')).default;
+        const client = new OpenAI({
+          apiKey: config.apiKey,
+          ...(config.baseUrl && { baseURL: config.baseUrl }),
+        });
+        const response = await client.models.list();
+        const models: string[] = [];
+        for await (const model of response) {
+          models.push(model.id);
+        }
+        return { models: models.sort() };
+      }
+
+      if (config.type === 'gemini') {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${config.apiKey}`,
+        );
+        const data = await res.json();
+        const models = (data.models || [])
+          .filter((m: { supportedGenerationMethods?: string[] }) =>
+            m.supportedGenerationMethods?.includes('generateContent'),
+          )
+          .map((m: { name?: string }) => (m.name || '').replace('models/', ''))
+          .filter(Boolean)
+          .sort();
+        return { models };
+      }
+
+      return { models: [config.defaultModel] };
+    } catch (error) {
+      throw new HttpException(
+        { error: `Failed to list models: ${error instanceof Error ? error.message : error}` },
+        502,
+      );
+    }
+  }
+
+  @Post('chat')
+  @UseGuards(AdminGuard)
+  async chat(@Body() body: GenerateDto) {
+    const messages: ChatMessage[] = [];
+
+    if (body.system) {
+      messages.push({ role: 'system', content: body.system });
+    }
+    messages.push({ role: 'user', content: body.prompt });
+
+    const result = await this.router.route(
+      {
+        messages,
+        model: body.model,
+        temperature: body.temperature,
+        max_tokens: body.maxTokens,
+      },
+      {
+        provider: body.provider,
+        freeOnly: body.freeOnly,
+      },
+    );
+
+    return {
+      text: result.content,
+      provider: result.provider,
+      model: result.model,
+    };
   }
 }
 

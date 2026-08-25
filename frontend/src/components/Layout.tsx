@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { LayoutDashboard, Settings, Cpu, LogOut } from 'lucide-react'
+import { LayoutDashboard, Settings, Cpu, MessageSquare, LogOut } from 'lucide-react'
 import { logout } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
@@ -16,6 +16,7 @@ export default function Layout({ onLogout }: LayoutProps) {
   const navItems = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/providers', icon: Cpu, label: 'Providers' },
+    { to: '/chat', icon: MessageSquare, label: 'Chat' },
     { to: '/settings', icon: Settings, label: 'Settings' },
   ]
 

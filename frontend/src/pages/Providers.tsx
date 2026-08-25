@@ -12,8 +12,8 @@ import { Plus, Trash2, FlaskConical, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const PROVIDER_PRESETS = [
-  { name: 'groq', displayName: 'Groq', type: 'openai-compat', baseUrl: 'https://api.groq.com/openai/v1', defaultModel: 'llama-3.3-70b-versatile', isPaid: false },
-  { name: 'gemini', displayName: 'Google Gemini', type: 'gemini', baseUrl: null, defaultModel: 'gemini-2.0-flash', isPaid: false },
+  { name: 'groq', displayName: 'Groq', type: 'openai-compat', baseUrl: 'https://api.groq.com/openai/v1', defaultModel: 'openai/gpt-oss-120b', isPaid: false },
+  { name: 'gemini', displayName: 'Google Gemini', type: 'gemini', baseUrl: null, defaultModel: 'gemini-3.6-flash', isPaid: false },
   { name: 'mistral', displayName: 'Mistral', type: 'openai-compat', baseUrl: 'https://api.mistral.ai/v1', defaultModel: 'mistral-small-latest', isPaid: false },
   { name: 'openai', displayName: 'OpenAI', type: 'openai-compat', baseUrl: null, defaultModel: 'gpt-4o-mini', isPaid: true },
 ]

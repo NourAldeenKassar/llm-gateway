@@ -5,6 +5,7 @@ import Login from '@/pages/Login'
 import Dashboard from '@/pages/Dashboard'
 import Providers from '@/pages/Providers'
 import Settings from '@/pages/Settings'
+import Chat from '@/pages/Chat'
 import Layout from '@/components/Layout'
 
 export default function App() {
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/providers" element={<Providers />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/chat" element={<Chat />} />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

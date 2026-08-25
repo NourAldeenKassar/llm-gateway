@@ -74,6 +74,11 @@ export async function testProvider(id: string): Promise<TestResult> {
   return data
 }
 
+export async function listModels(providerId: string): Promise<string[]> {
+  const { data } = await api.get(`/api/admin/providers/${providerId}/models`)
+  return data.models
+}
+
 export async function getConfig(): Promise<GatewayConfig> {
   const { data } = await api.get('/api/admin/config')
   return data
