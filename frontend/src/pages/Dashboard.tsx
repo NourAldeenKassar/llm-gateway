@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { listProviders, getHealth, runHealthCheck, type Provider, type HealthStatus } from '@/lib/api'
-import { CheckCircle, XCircle, Zap, DollarSign, RefreshCw, Clock } from 'lucide-react'
+import { CheckCircle, XCircle, RefreshCw, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function Dashboard() {
@@ -128,17 +128,10 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{p.displayName}</span>
-                  {p.isPaid ? (
-                    <DollarSign size={14} className="text-warning" />
-                  ) : (
-                    <Zap size={14} className="text-success" />
-                  )}
+                  <span className={cn('text-xs px-2 py-0.5 rounded-full', p.isPaid ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success')}>
+                    {p.isPaid ? 'Paid' : 'Free'}
+                  </span>
                 </div>
-                {p.enabled ? (
-                  <CheckCircle size={16} className="text-success" />
-                ) : (
-                  <XCircle size={16} className="text-muted-foreground" />
-                )}
               </div>
               <div className="text-sm text-muted-foreground space-y-1">
                 <p>Model: {p.defaultModel}</p>
