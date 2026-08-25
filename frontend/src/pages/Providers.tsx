@@ -31,8 +31,15 @@ export default function Providers() {
   useEffect(() => { load() }, [])
 
   const handleAdd = async (preset: typeof PROVIDER_PRESETS[0], apiKey: string, isPaid: boolean) => {
+    const baseName = preset.name
+    const existing = providers.filter((p) => p.name === baseName || p.name.startsWith(baseName + '-'))
+    const name = existing.length === 0 ? baseName : `${baseName}-${existing.length + 1}`
+    const displayName = existing.length === 0 ? preset.displayName : `${preset.displayName} ${existing.length + 1}`
+
     await createProvider({
       ...preset,
+      name,
+      displayName,
       apiKey,
       isPaid,
       baseUrl: preset.baseUrl,
@@ -92,25 +99,20 @@ export default function Providers() {
     }
   }
 
-  const existingNames = providers.map((p) => p.name)
-  const availablePresets = PROVIDER_PRESETS.filter((p) => !existingNames.includes(p.name))
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold">Providers</h2>
-        {availablePresets.length > 0 && (
-          <button
-            onClick={() => setShowAdd(!showAdd)}
-            className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            {showAdd ? <X size={16} /> : <Plus size={16} />}
-            {showAdd ? 'Cancel' : 'Add Provider'}
-          </button>
-        )}
+        <button
+          onClick={() => setShowAdd(!showAdd)}
+          className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          {showAdd ? <X size={16} /> : <Plus size={16} />}
+          {showAdd ? 'Cancel' : 'Add Provider'}
+        </button>
       </div>
 
-      {showAdd && <AddProviderPanel presets={availablePresets} onAdd={handleAdd} />}
+      {showAdd && <AddProviderPanel presets={PROVIDER_PRESETS} onAdd={handleAdd} />}
 
       <div className="flex flex-col gap-4">
         {providers.map((p) => (
