@@ -6,6 +6,10 @@ export class AdminChatDto {
 
   @IsOptional()
   @IsString()
+  conversationId?: string;
+
+  @IsOptional()
+  @IsString()
   system?: string;
 
   @IsOptional()

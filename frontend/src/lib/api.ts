@@ -89,6 +89,41 @@ export async function updateConfig(updates: Partial<GatewayConfig>) {
   return data
 }
 
+export interface Conversation {
+  id: string
+  title: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  provider?: string
+  model?: string
+  createdAt: string
+}
+
+export interface ConversationWithMessages extends Conversation {
+  messages: ChatMessage[]
+}
+
+export async function listConversations(): Promise<Conversation[]> {
+  const { data } = await api.get('/api/admin/conversations')
+  return data
+}
+
+export async function getConversation(id: string): Promise<ConversationWithMessages> {
+  const { data } = await api.get(`/api/admin/conversations/${id}`)
+  return data
+}
+
+export async function deleteConversation(id: string) {
+  const { data } = await api.delete(`/api/admin/conversations/${id}`)
+  return data
+}
+
 export async function getHealth() {
   const { data } = await api.get('/api/health')
   return data

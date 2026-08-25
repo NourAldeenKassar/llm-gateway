@@ -209,15 +209,71 @@ export class AdminController {
     }
   }
 
+  @Get('conversations')
+  @UseGuards(AdminGuard)
+  async listConversations() {
+    return this.prisma.conversation.findMany({
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  @Get('conversations/:id')
+  @UseGuards(AdminGuard)
+  async getConversation(@Param('id') id: string) {
+    return this.prisma.conversation.findUnique({
+      where: { id },
+      include: {
+        messages: { orderBy: { createdAt: 'asc' } },
+      },
+    });
+  }
+
+  @Delete('conversations/:id')
+  @UseGuards(AdminGuard)
+  async deleteConversation(@Param('id') id: string) {
+    await this.prisma.conversation.delete({ where: { id } });
+    return { success: true };
+  }
+
   @Post('chat')
   @UseGuards(AdminGuard)
   async chat(@Body() body: AdminChatDto) {
-    const messages: ChatMessage[] = [];
+    let conversationId = body.conversationId;
 
+    if (!conversationId) {
+      const title =
+        body.prompt.length > 50
+          ? body.prompt.slice(0, 50) + '...'
+          : body.prompt;
+      const conversation = await this.prisma.conversation.create({
+        data: { title },
+      });
+      conversationId = conversation.id;
+    }
+
+    await this.prisma.message.create({
+      data: {
+        conversationId,
+        role: 'user',
+        content: body.prompt,
+      },
+    });
+
+    const history = await this.prisma.message.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const messages: ChatMessage[] = [];
     if (body.system) {
       messages.push({ role: 'system', content: body.system });
     }
-    messages.push({ role: 'user', content: body.prompt });
+    for (const msg of history) {
+      messages.push({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+      });
+    }
 
     const result = await this.router.route(
       {
@@ -232,7 +288,23 @@ export class AdminController {
       },
     );
 
+    await this.prisma.message.create({
+      data: {
+        conversationId,
+        role: 'assistant',
+        content: result.content,
+        provider: result.provider,
+        model: result.model,
+      },
+    });
+
+    await this.prisma.conversation.update({
+      where: { id: conversationId },
+      data: { updatedAt: new Date() },
+    });
+
     return {
+      conversationId,
       text: result.content,
       provider: result.provider,
       model: result.model,
