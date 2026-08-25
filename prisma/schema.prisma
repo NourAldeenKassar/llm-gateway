@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Provider {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  displayName  String
+  type         String
+  apiKey       String
+  baseUrl      String?
+  defaultModel String
+  isPaid       Boolean  @default(false)
+  enabled      Boolean  @default(true)
+  priority     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model GatewayConfig {
+  id              String  @id @default("default")
+  defaultProvider String?
+  freeOnlyDefault Boolean @default(true)
+}
