@@ -79,38 +79,48 @@ export default function Dashboard() {
       {health && health.providers.length > 0 && (
         <div className="mb-8">
           <h3 className="text-lg font-medium mb-4">Provider Health</h3>
-          <div className="flex flex-col gap-2">
-            {health.providers.map((p) => (
-              <div
-                key={p.name}
-                className={cn(
-                  'flex items-center justify-between border rounded-lg px-4 py-3',
-                  p.status === 'healthy' ? 'border-success/30' : 'border-destructive/30',
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <ProviderIcon name={p.name} size={28} />
-                  <div>
-                    <span className="text-sm font-medium">{p.displayName}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {p.error && (
-                    <span className="text-destructive text-xs max-w-48 truncate" title={p.error}>
-                      {p.error}
-                    </span>
-                  )}
-                  {p.latencyMs !== null && (
-                    <span className="text-sm text-muted-foreground font-mono">{p.latencyMs}ms</span>
-                  )}
-                  {p.status === 'healthy' ? (
-                    <CheckCircle size={18} className="text-success" />
-                  ) : (
-                    <XCircle size={18} className="text-destructive" />
-                  )}
-                </div>
-              </div>
-            ))}
+          <div className="border border-border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/30">
+                  <th className="text-left py-2.5 px-4 font-medium text-muted-foreground">Provider</th>
+                  <th className="text-right py-2.5 px-4 font-medium text-muted-foreground">Latency</th>
+                  <th className="text-center py-2.5 px-4 font-medium text-muted-foreground w-16">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {health.providers.map((p, i) => (
+                  <tr
+                    key={p.name}
+                    className={cn(
+                      i < health.providers.length - 1 && 'border-b border-border',
+                    )}
+                  >
+                    <td className="py-2.5 px-4">
+                      <div className="flex items-center gap-3">
+                        <ProviderIcon name={p.name} size={22} />
+                        <span className="font-medium">{p.displayName}</span>
+                        {p.error && (
+                          <span className="text-destructive text-xs truncate max-w-48" title={p.error}>
+                            {p.error}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-4 text-right text-muted-foreground font-mono">
+                      {p.latencyMs !== null ? `${p.latencyMs}ms` : '-'}
+                    </td>
+                    <td className="py-2.5 px-4 text-center">
+                      {p.status === 'healthy' ? (
+                        <CheckCircle size={16} className="text-success inline-block" />
+                      ) : (
+                        <XCircle size={16} className="text-destructive inline-block" />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
