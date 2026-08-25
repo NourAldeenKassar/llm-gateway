@@ -14,7 +14,9 @@ import { HealthController } from './health/health.controller';
     ConfigModule.forRoot({ isGlobal: true }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
-      exclude: ['/api/(.*)', '/v1/(.*)'],
+      serveStaticOptions: {
+        index: ['index.html'],
+      },
     }),
     PrismaModule,
     ProvidersModule,
