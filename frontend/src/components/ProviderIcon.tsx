@@ -1,10 +1,10 @@
 import { cn } from '@/lib/utils'
 
 const PROVIDER_ICONS: Record<string, string> = {
-  groq: '/providers/groq.svg',
-  openai: '/providers/openai.svg',
-  gemini: '/providers/gemini.svg',
-  mistral: '/providers/mistral.svg',
+  groq: '/providers/groq.png',
+  openai: '/providers/openai.png',
+  gemini: '/providers/gemini.png',
+  mistral: '/providers/mistral.png',
 }
 
 interface ProviderIconProps {
