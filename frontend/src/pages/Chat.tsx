@@ -195,11 +195,11 @@ export default function Chat() {
       </div>
 
       <div className="flex-1 flex flex-col">
-        <div className="flex items-center justify-end gap-3 mb-4">
+        <div className="flex items-center justify-end gap-2 mb-4">
           <select
             value={selectedProvider}
             onChange={(e) => setSelectedProvider(e.target.value)}
-            className="px-3 py-1.5 rounded-md border border-border bg-background text-sm outline-none focus:border-primary"
+            className="h-9 px-3 rounded-lg border border-border bg-muted/30 text-sm outline-none focus:border-primary transition-colors"
           >
             <option value="">Auto (fallback)</option>
             {providers.map((p) => (
@@ -213,9 +213,9 @@ export default function Chat() {
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
               disabled={loadingModels}
-              className="px-3 py-1.5 rounded-md border border-border bg-background text-sm outline-none focus:border-primary disabled:opacity-50"
+              className="h-9 px-3 rounded-lg border border-border bg-muted/30 text-sm outline-none focus:border-primary disabled:opacity-50 transition-colors"
             >
-              <option value="">{loadingModels ? 'Loading models...' : 'Default model'}</option>
+              <option value="">{loadingModels ? 'Loading...' : 'Default model'}</option>
               {models.map((m) => (
                 <option key={m} value={m}>
                   {m}
@@ -224,15 +224,17 @@ export default function Chat() {
             </select>
           )}
           {!selectedProvider && (
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <input
-                type="checkbox"
-                checked={freeOnly}
-                onChange={(e) => setFreeOnly(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-border"
-              />
-              Free only
-            </label>
+            <button
+              onClick={() => setFreeOnly(!freeOnly)}
+              className={cn(
+                'h-9 px-3 rounded-lg border text-sm font-medium transition-colors',
+                freeOnly
+                  ? 'border-success/40 bg-success/10 text-success'
+                  : 'border-border bg-muted/30 text-muted-foreground',
+              )}
+            >
+              {freeOnly ? 'Free only' : 'All providers'}
+            </button>
           )}
         </div>
 
