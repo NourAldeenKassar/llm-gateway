@@ -7,8 +7,11 @@ Self-hosted API gateway that routes requests to multiple LLM providers with auto
 - **Single endpoint** -- apps send a prompt, the gateway picks the best available provider
 - **Automatic fallback** -- if a provider fails or rate-limits, the next one in the chain is tried
 - **Free vs paid control** -- `freeOnly` param ensures apps never hit paid providers unless explicitly allowed
-- **Admin dashboard** -- add/remove providers, configure priorities, test connectivity, chat playground
-- **Model browser** -- lists available models directly from each provider's API
+- **Admin dashboard** -- add/remove providers, configure priorities, inline editing, provider health checks
+- **Chat playground** -- test providers directly from the dashboard with conversation history
+- **Model browser** -- lists available models from each provider's API
+- **Health checks** -- manually trigger health checks across all providers with latency tracking
+- **Multiple accounts** -- add the same provider multiple times with different API keys
 - **API key auth** -- gateway endpoint protected by a single API key
 
 ## Tested Providers
@@ -59,7 +62,7 @@ Only `prompt` is required. Set `freeOnly: true` to restrict to free-tier provide
 
 ### GET `/api/health`
 
-No auth required. Returns system status and number of enabled providers.
+No auth required. Returns system status and provider health (cached from last manual check).
 
 ## Local Development
 
