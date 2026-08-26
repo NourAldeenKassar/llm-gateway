@@ -5,22 +5,29 @@ const endpoints = [
     method: 'POST',
     path: '/api/generate',
     auth: 'API Key',
-    description: 'Generate a text response from the best available provider.',
+    description: 'Generate a text response from the best available provider. The gateway handles provider selection and fallback automatically.',
     request: {
       headers: {
         'Authorization': 'Bearer <GATEWAY_API_KEY>',
         'Content-Type': 'application/json',
       },
-      body: {
-        prompt: { type: 'string', required: true, description: 'The prompt to send' },
-        system: { type: 'string', required: false, description: 'System message for context' },
-        freeOnly: { type: 'boolean', required: false, description: 'Restrict to free-tier providers (default: from settings)' },
-        temperature: { type: 'number', required: false, description: 'Sampling temperature (default: 0.7)' },
-        maxTokens: { type: 'number', required: false, description: 'Maximum tokens in response' },
-      },
+      body: [
+        { name: 'prompt', type: 'string', required: true, description: 'The prompt to send' },
+        { name: 'system', type: 'string', required: false, description: 'System message for context' },
+        { name: 'freeOnly', type: 'boolean', required: false, description: 'Restrict to free-tier providers (default: from settings)' },
+        { name: 'temperature', type: 'number', required: false, description: 'Sampling temperature (default: 0.7)' },
+        { name: 'maxTokens', type: 'number', required: false, description: 'Maximum tokens in response' },
+      ],
     },
+    example: `curl -X POST https://your-gateway/api/generate \\
+  -H "Authorization: Bearer your-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "prompt": "What is 2+2?",
+    "freeOnly": true
+  }'`,
     response: `{
-  "text": "Response from the AI",
+  "text": "4",
   "provider": "groq",
   "model": "openai/gpt-oss-120b"
 }`,
@@ -33,8 +40,9 @@ const endpoints = [
     method: 'GET',
     path: '/api/health',
     auth: 'None',
-    description: 'Check system health and provider status.',
+    description: 'Returns system health status and cached provider health from the last manual check.',
     request: null,
+    example: `curl https://your-gateway/api/health`,
     response: `{
   "status": "healthy",
   "database": "ok",
@@ -45,8 +53,7 @@ const endpoints = [
       "isPaid": false,
       "status": "healthy",
       "latencyMs": 370,
-      "error": null,
-      "checkedAt": "2026-08-26T00:00:00Z"
+      "error": null
     }
   ],
   "lastCheck": "2026-08-26T00:00:00Z"
@@ -56,8 +63,8 @@ const endpoints = [
 ]
 
 const methodColors: Record<string, string> = {
-  GET: 'bg-blue-500/10 text-blue-600',
-  POST: 'bg-success/10 text-success',
+  GET: 'bg-blue-500/15 text-blue-600 border-blue-500/20',
+  POST: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20',
 }
 
 export default function Docs() {
@@ -65,94 +72,108 @@ export default function Docs() {
     <div>
       <h2 className="text-xl font-semibold mb-2">API Documentation</h2>
       <p className="text-sm text-muted-foreground mb-8">
-        Use these endpoints to integrate the LLM Gateway into your applications.
+        Integrate the LLM Gateway into your applications using these endpoints.
       </p>
 
-      <div className="flex flex-col gap-8 max-w-3xl">
+      <div className="flex flex-col gap-10 max-w-3xl">
         {endpoints.map((ep) => (
-          <div key={ep.path} className="border border-border rounded-lg overflow-hidden">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-border bg-muted/20">
-              <span className={cn('text-xs font-bold px-2 py-1 rounded', methodColors[ep.method])}>
+          <div key={ep.path}>
+            <div className="flex items-center gap-3 mb-4">
+              <span className={cn('text-[11px] font-semibold px-2.5 py-1 rounded-md border font-[family-name:var(--font-mono)]', methodColors[ep.method])}>
                 {ep.method}
               </span>
-              <code className="text-sm font-mono font-medium">{ep.path}</code>
-              <span className="ml-auto text-xs text-muted-foreground">
-                Auth: {ep.auth}
-              </span>
+              <code className="text-base font-[family-name:var(--font-mono)] font-medium tracking-tight">{ep.path}</code>
+              {ep.auth !== 'None' && (
+                <span className="ml-auto text-[11px] px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">
+                  {ep.auth}
+                </span>
+              )}
+              {ep.auth === 'None' && (
+                <span className="ml-auto text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  Public
+                </span>
+              )}
             </div>
 
-            <div className="px-5 py-4 space-y-5">
-              <p className="text-sm">{ep.description}</p>
+            <p className="text-sm text-muted-foreground mb-5 leading-relaxed">{ep.description}</p>
 
-              {ep.request && (
-                <>
-                  <div>
-                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Headers</h4>
-                    <div className="bg-muted/30 rounded-lg p-3 font-mono text-xs space-y-1">
-                      {Object.entries(ep.request.headers).map(([key, value]) => (
-                        <div key={key}>
-                          <span className="text-muted-foreground">{key}:</span> {value}
-                        </div>
-                      ))}
-                    </div>
+            {ep.request && (
+              <div className="space-y-5 mb-5">
+                <Section title="Headers">
+                  <div className="bg-[#1a1a2e] rounded-lg p-4 font-[family-name:var(--font-mono)] text-[13px] leading-relaxed">
+                    {Object.entries(ep.request.headers).map(([key, value]) => (
+                      <div key={key}>
+                        <span className="text-blue-400">{key}</span>
+                        <span className="text-muted-foreground">: </span>
+                        <span className="text-emerald-400">{value}</span>
+                      </div>
+                    ))}
                   </div>
+                </Section>
 
-                  <div>
-                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Body Parameters</h4>
-                    <div className="border border-border rounded-lg overflow-hidden">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="bg-muted/30 border-b border-border">
-                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Parameter</th>
-                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Type</th>
-                            <th className="text-center px-3 py-2 font-medium text-muted-foreground">Required</th>
-                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Description</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Object.entries(ep.request.body).map(([name, param], i) => (
-                            <tr key={name} className={cn(i < Object.keys(ep.request!.body).length - 1 && 'border-b border-border')}>
-                              <td className="px-3 py-2 font-mono text-xs">{name}</td>
-                              <td className="px-3 py-2 text-muted-foreground">{param.type}</td>
-                              <td className="px-3 py-2 text-center">
-                                {param.required ? (
-                                  <span className="text-xs text-success font-medium">Yes</span>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">No</span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-muted-foreground">{param.description}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                <Section title="Parameters">
+                  <div className="space-y-3">
+                    {ep.request.body.map((param) => (
+                      <div key={param.name} className="flex items-start gap-3 text-sm">
+                        <code className="font-[family-name:var(--font-mono)] text-[13px] font-medium bg-muted px-1.5 py-0.5 rounded shrink-0">
+                          {param.name}
+                        </code>
+                        <span className="text-[11px] text-muted-foreground font-[family-name:var(--font-mono)] bg-muted/50 px-1.5 py-0.5 rounded shrink-0">
+                          {param.type}
+                        </span>
+                        {param.required && (
+                          <span className="text-[10px] font-semibold text-destructive uppercase shrink-0">required</span>
+                        )}
+                        <span className="text-muted-foreground">{param.description}</span>
+                      </div>
+                    ))}
                   </div>
-                </>
-              )}
-
-              <div>
-                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Response</h4>
-                <pre className="bg-muted/30 rounded-lg p-3 font-mono text-xs overflow-x-auto">{ep.response}</pre>
+                </Section>
               </div>
+            )}
 
-              {ep.errors.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Errors</h4>
-                  <div className="space-y-1">
+            <Section title="Example">
+              <pre className="bg-[#1a1a2e] text-emerald-400 rounded-lg p-4 font-[family-name:var(--font-mono)] text-[13px] leading-relaxed overflow-x-auto">
+                {ep.example}
+              </pre>
+            </Section>
+
+            <div className="mt-5">
+              <Section title="Response">
+                <pre className="bg-[#1a1a2e] text-gray-300 rounded-lg p-4 font-[family-name:var(--font-mono)] text-[13px] leading-relaxed overflow-x-auto">
+                  {ep.response}
+                </pre>
+              </Section>
+            </div>
+
+            {ep.errors.length > 0 && (
+              <div className="mt-5">
+                <Section title="Errors">
+                  <div className="space-y-2">
                     {ep.errors.map((err) => (
                       <div key={err.status} className="flex items-center gap-3 text-sm">
-                        <span className="font-mono text-xs text-destructive font-medium">{err.status}</span>
+                        <code className="font-[family-name:var(--font-mono)] text-[13px] font-semibold text-destructive bg-destructive/10 px-2 py-0.5 rounded">
+                          {err.status}
+                        </code>
                         <span className="text-muted-foreground">{err.description}</span>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
+                </Section>
+              </div>
+            )}
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">{title}</h4>
+      {children}
     </div>
   )
 }
