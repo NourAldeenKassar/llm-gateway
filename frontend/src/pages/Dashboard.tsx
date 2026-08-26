@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { listProviders, getHealth, runHealthCheck, type Provider, type HealthStatus } from '@/lib/api'
 import { CheckCircle, XCircle, RefreshCw, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -90,41 +90,42 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {health.providers.map((p, i) => (
-                  <tr
-                    key={p.name}
-                    className={cn(
-                      i < health.providers.length - 1 && 'border-b border-border',
-                    )}
-                  >
-                    <td className="py-2.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <ProviderIcon name={p.name} size={22} />
-                        <span className="font-medium">{p.displayName}</span>
-                        <span className={cn('text-xs px-1.5 py-0.5 rounded-full', p.isPaid ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success')}>
-                          {p.isPaid ? 'Paid' : 'Free'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-4 text-right text-muted-foreground font-mono">
-                      {p.latencyMs !== null ? `${p.latencyMs}ms` : '-'}
-                    </td>
-                    <td className="py-2.5 px-4 text-center">
-                      {p.status === 'healthy' ? (
-                        <CheckCircle size={16} className="text-success inline-block" />
-                      ) : (
-                        <XCircle size={16} className="text-destructive inline-block" />
+                  <React.Fragment key={p.name}>
+                    <tr
+                      className={cn(
+                        !p.error && i < health.providers.length - 1 && 'border-b border-border',
                       )}
-                    </td>
-                  </tr>
-                  {p.error && (
-                    <tr className={cn(i < health.providers.length - 1 && 'border-b border-border')}>
-                      <td colSpan={3} className="px-4 pb-2.5 pt-0">
-                        <div className="text-xs text-destructive bg-destructive/5 rounded px-3 py-2 ml-9">
-                          {p.error}
+                    >
+                      <td className="py-2.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <ProviderIcon name={p.name} size={22} />
+                          <span className="font-medium">{p.displayName}</span>
+                          <span className={cn('text-xs px-1.5 py-0.5 rounded-full', p.isPaid ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success')}>
+                            {p.isPaid ? 'Paid' : 'Free'}
+                          </span>
                         </div>
                       </td>
+                      <td className="py-2.5 px-4 text-right text-muted-foreground font-mono">
+                        {p.latencyMs !== null ? `${p.latencyMs}ms` : '-'}
+                      </td>
+                      <td className="py-2.5 px-4 text-center">
+                        {p.status === 'healthy' ? (
+                          <CheckCircle size={16} className="text-success inline-block" />
+                        ) : (
+                          <XCircle size={16} className="text-destructive inline-block" />
+                        )}
+                      </td>
                     </tr>
-                  )}
+                    {p.error && (
+                      <tr className={cn(i < health.providers.length - 1 && 'border-b border-border')}>
+                        <td colSpan={3} className="px-4 pb-2.5 pt-0">
+                          <div className="text-xs text-destructive bg-destructive/5 rounded px-3 py-2 ml-9">
+                            {p.error}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
