@@ -44,4 +44,5 @@ model GatewayConfig {
   id              String  @id @default("default")
   defaultProvider String?
   freeOnlyDefault Boolean @default(true)
+  adminPassword   String?
 }

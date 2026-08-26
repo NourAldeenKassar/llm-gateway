@@ -141,6 +141,11 @@ export interface HealthStatus {
   lastCheck: string | null
 }
 
+export async function changePassword(currentPassword: string, newPassword: string) {
+  const { data } = await api.post('/api/admin/change-password', { currentPassword, newPassword })
+  return data
+}
+
 export async function getHealth(): Promise<HealthStatus> {
   const { data } = await api.get('/api/health')
   return data

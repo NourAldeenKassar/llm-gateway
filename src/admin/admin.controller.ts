@@ -34,9 +34,15 @@ export class AdminController {
 
   @Post('login')
   async login(@Body() body: { password: string }, @Res() res: Response) {
-    const adminPassword = this.config.get<string>('ADMIN_PASSWORD');
+    const gatewayConfig = await this.prisma.gatewayConfig.findUnique({
+      where: { id: 'default' },
+    });
 
-    if (!adminPassword || body.password !== adminPassword) {
+    const validPassword =
+      gatewayConfig?.adminPassword ||
+      this.config.get<string>('ADMIN_PASSWORD');
+
+    if (!validPassword || body.password !== validPassword) {
       throw new HttpException('Invalid password', 401);
     }
 
@@ -160,6 +166,36 @@ export class AdminController {
     });
 
     return config;
+  }
+
+  @Post('change-password')
+  @UseGuards(AdminGuard)
+  async changePassword(
+    @Body() body: { currentPassword: string; newPassword: string },
+  ) {
+    const gatewayConfig = await this.prisma.gatewayConfig.findUnique({
+      where: { id: 'default' },
+    });
+
+    const validPassword =
+      gatewayConfig?.adminPassword ||
+      this.config.get<string>('ADMIN_PASSWORD');
+
+    if (body.currentPassword !== validPassword) {
+      throw new HttpException('Current password is incorrect', 401);
+    }
+
+    if (!body.newPassword || body.newPassword.length < 6) {
+      throw new HttpException('New password must be at least 6 characters', 400);
+    }
+
+    await this.prisma.gatewayConfig.upsert({
+      where: { id: 'default' },
+      update: { adminPassword: body.newPassword },
+      create: { id: 'default', adminPassword: body.newPassword },
+    });
+
+    return { success: true };
   }
 
   @Get('providers/:id/models')

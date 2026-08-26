@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react'
-import { getConfig, updateConfig, listProviders, type GatewayConfig, type Provider } from '@/lib/api'
+import { getConfig, updateConfig, listProviders, changePassword, type GatewayConfig, type Provider } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 export default function Settings() {
   const [config, setConfig] = useState<GatewayConfig | null>(null)
   const [providers, setProviders] = useState<Provider[]>([])
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [changingPassword, setChangingPassword] = useState(false)
 
   useEffect(() => {
     getConfig().then(setConfig).catch(() => {})
@@ -15,6 +21,35 @@ export default function Settings() {
     if (!config) return
     const updated = await updateConfig(updates)
     setConfig(updated)
+  }
+
+  const handleChangePassword = async () => {
+    setPasswordError('')
+    setPasswordSuccess(false)
+
+    if (newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match')
+      return
+    }
+
+    setChangingPassword(true)
+    try {
+      await changePassword(currentPassword, newPassword)
+      setPasswordSuccess(true)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setTimeout(() => setPasswordSuccess(false), 3000)
+    } catch {
+      setPasswordError('Current password is incorrect')
+    } finally {
+      setChangingPassword(false)
+    }
   }
 
   if (!config) return null
@@ -64,6 +99,46 @@ export default function Settings() {
                 'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow-sm',
                 config.freeOnlyDefault && 'translate-x-5',
               )} />
+            </button>
+          </div>
+        </div>
+
+        <div className="border border-border rounded-lg p-5">
+          <p className="text-sm font-medium mb-4">Change Password</p>
+          <div className="flex flex-col gap-3">
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              placeholder="Current password"
+              className="w-full h-10 px-3 rounded-lg border border-border bg-muted/30 text-sm outline-none focus:border-primary transition-colors"
+            />
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="New password"
+              className="w-full h-10 px-3 rounded-lg border border-border bg-muted/30 text-sm outline-none focus:border-primary transition-colors"
+            />
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
+              className="w-full h-10 px-3 rounded-lg border border-border bg-muted/30 text-sm outline-none focus:border-primary transition-colors"
+            />
+            {passwordError && (
+              <p className="text-sm text-destructive">{passwordError}</p>
+            )}
+            {passwordSuccess && (
+              <p className="text-sm text-success">Password changed successfully</p>
+            )}
+            <button
+              onClick={handleChangePassword}
+              disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword}
+              className="w-full h-10 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {changingPassword ? 'Changing...' : 'Change Password'}
             </button>
           </div>
         </div>
