@@ -122,7 +122,7 @@ export default function Docs() {
                           {param.type}
                         </span>
                         {param.required && (
-                          <span className="text-[10px] font-semibold text-destructive uppercase shrink-0">required</span>
+                          <span className="text-[10px] font-medium text-warning bg-warning/10 px-1.5 py-0.5 rounded shrink-0">required</span>
                         )}
                         <span className="text-muted-foreground">{param.description}</span>
                       </div>
