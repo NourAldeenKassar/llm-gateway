@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProviderFactory } from '../providers/provider.factory';
 
@@ -20,7 +20,7 @@ export interface HealthStatus {
 }
 
 @Injectable()
-export class HealthService {
+export class HealthService implements OnModuleInit {
   private readonly logger = new Logger(HealthService.name);
   private cachedHealth: HealthStatus = {
     status: 'unchecked',
@@ -33,6 +33,27 @@ export class HealthService {
     private prisma: PrismaService,
     private providerFactory: ProviderFactory,
   ) {}
+
+  async onModuleInit() {
+    try {
+      const saved = await this.prisma.healthCheck.findUnique({
+        where: { id: 'latest' },
+      });
+      if (saved) {
+        this.cachedHealth = {
+          status: saved.status as HealthStatus['status'],
+          database: saved.database as 'ok' | 'error',
+          providers: saved.providers as unknown as ProviderHealth[],
+          lastCheck: saved.checkedAt.toISOString(),
+        };
+        this.logger.log(
+          `Loaded last health check from DB: ${saved.status} (${saved.checkedAt.toISOString()})`,
+        );
+      }
+    } catch {
+      this.logger.warn('Could not load saved health check');
+    }
+  }
 
   getHealth(): HealthStatus {
     return this.cachedHealth;
@@ -99,6 +120,27 @@ export class HealthService {
       providers,
       lastCheck: new Date().toISOString(),
     };
+
+    await this.prisma.healthCheck
+      .upsert({
+        where: { id: 'latest' },
+        update: {
+          status,
+          database,
+          providers: providers as unknown as object[],
+          checkedAt: new Date(),
+        },
+        create: {
+          id: 'latest',
+          status,
+          database,
+          providers: providers as unknown as object[],
+          checkedAt: new Date(),
+        },
+      })
+      .catch((err) => {
+        this.logger.error(`Failed to save health check: ${err.message}`);
+      });
 
     this.logger.log(
       `Health check complete: ${status} (${healthyCount}/${providers.length} providers healthy)`,

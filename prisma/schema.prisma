@@ -40,6 +40,14 @@ model Message {
   createdAt      DateTime     @default(now())
 }
 
+model HealthCheck {
+  id        String   @id @default("latest")
+  status    String   // "healthy" | "degraded" | "unhealthy"
+  database  String   // "ok" | "error"
+  providers Json     // ProviderHealth[]
+  checkedAt DateTime @default(now())
+}
+
 model GatewayConfig {
   id              String  @id @default("default")
   defaultProvider String?
