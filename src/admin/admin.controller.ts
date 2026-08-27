@@ -444,6 +444,7 @@ export class AdminController {
       text: result.content,
       provider: result.provider,
       model: result.model,
+      ...(result.failedProviders && { failedProviders: result.failedProviders }),
     };
   }
 }

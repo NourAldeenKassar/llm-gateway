@@ -19,6 +19,7 @@ export interface LlmResponse {
     completion_tokens: number;
     total_tokens: number;
   };
+  failedProviders?: { provider: string; error: string }[];
 }
 
 export interface LlmProvider {

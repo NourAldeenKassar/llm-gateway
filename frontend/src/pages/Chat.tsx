@@ -18,6 +18,7 @@ interface Message {
   content: string
   provider?: string
   model?: string
+  failedProviders?: { provider: string; error: string }[]
 }
 
 export default function Chat() {
@@ -126,7 +127,7 @@ export default function Chat() {
 
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: data.text, provider: data.provider, model: data.model },
+        { role: 'assistant', content: data.text, provider: data.provider, model: data.model, failedProviders: data.failedProviders },
       ])
 
       loadConversations()
@@ -273,6 +274,13 @@ export default function Chat() {
                   <p className="whitespace-pre-wrap">{msg.content}</p>
                 )}
               </div>
+              {msg.failedProviders && msg.failedProviders.length > 0 && (
+                <div className="text-xs mt-2 px-2 py-1.5 rounded bg-warning/10 text-warning">
+                  {msg.failedProviders.map((f, j) => (
+                    <div key={j}>{f.provider} failed: {f.error.length > 80 ? f.error.slice(0, 80) + '...' : f.error}</div>
+                  ))}
+                </div>
+              )}
               {msg.provider && (
                 <p className="text-xs mt-2 opacity-60">
                   {msg.provider} / {msg.model}

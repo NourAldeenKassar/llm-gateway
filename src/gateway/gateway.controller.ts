@@ -34,6 +34,7 @@ export class GatewayController {
       text: result.content,
       provider: result.provider,
       model: result.model,
+      ...(result.failedProviders && { failedProviders: result.failedProviders }),
     };
   }
 }

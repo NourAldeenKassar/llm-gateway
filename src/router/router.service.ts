@@ -88,7 +88,10 @@ export class RouterService {
           usage: result.usage,
           source: options.source,
         });
-        return result;
+        return {
+          ...result,
+          failedProviders: errors.length > 0 ? errors : undefined,
+        };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         const isRateLimit = this.isRateLimitError(error);
