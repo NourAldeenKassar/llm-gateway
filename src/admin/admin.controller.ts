@@ -334,6 +334,8 @@ export class AdminController {
         model: l.model,
         status: l.status,
         latencyMs: l.latencyMs,
+        promptTokens: l.promptTokens,
+        completionTokens: l.completionTokens,
         totalTokens: l.totalTokens,
         error: l.error,
         source: l.source,

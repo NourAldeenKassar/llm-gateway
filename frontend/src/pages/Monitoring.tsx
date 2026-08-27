@@ -135,7 +135,8 @@ export default function Monitoring() {
                   <th className="text-left py-2.5 px-4 font-medium text-muted-foreground">Model</th>
                   <th className="text-center py-2.5 px-4 font-medium text-muted-foreground">Status</th>
                   <th className="text-right py-2.5 px-4 font-medium text-muted-foreground">Latency</th>
-                  <th className="text-right py-2.5 px-4 font-medium text-muted-foreground">Tokens</th>
+                  <th className="text-right py-2.5 px-4 font-medium text-muted-foreground">In-Tokens</th>
+                  <th className="text-right py-2.5 px-4 font-medium text-muted-foreground">Out-Tokens</th>
                   <th className="text-left py-2.5 px-4 font-medium text-muted-foreground">Source</th>
                 </tr>
               </thead>
@@ -146,6 +147,7 @@ export default function Monitoring() {
                     className={cn(i < recentLogs.length - 1 && 'border-b border-border')}
                   >
                     <td className="py-2.5 px-4 text-muted-foreground text-xs font-mono">
+                      {new Date(log.createdAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}{' '}
                       {new Date(log.createdAt).toLocaleTimeString()}
                     </td>
                     <td className="py-2.5 px-4">
@@ -159,7 +161,8 @@ export default function Monitoring() {
                       <StatusBadge status={log.status} />
                     </td>
                     <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{log.latencyMs}ms</td>
-                    <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{log.totalTokens || '-'}</td>
+                    <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{log.promptTokens || '-'}</td>
+                    <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{log.completionTokens || '-'}</td>
                     <td className="py-2.5 px-4 text-xs text-muted-foreground">{log.source}</td>
                   </tr>
                 ))}

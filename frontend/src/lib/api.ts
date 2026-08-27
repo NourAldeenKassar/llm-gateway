@@ -174,6 +174,8 @@ export interface RequestLogEntry {
   model: string
   status: string
   latencyMs: number
+  promptTokens: number | null
+  completionTokens: number | null
   totalTokens: number | null
   error: string | null
   source: string | null
