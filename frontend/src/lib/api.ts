@@ -89,6 +89,35 @@ export async function updateConfig(updates: Partial<GatewayConfig>) {
   return data
 }
 
+export interface ApiKey {
+  id: string
+  name: string
+  key: string
+  expiresAt: string | null
+  enabled: boolean
+  createdAt: string
+}
+
+export async function listApiKeys(): Promise<ApiKey[]> {
+  const { data } = await api.get('/api/admin/api-keys')
+  return data
+}
+
+export async function createApiKey(name: string, expiresAt?: string): Promise<ApiKey> {
+  const { data } = await api.post('/api/admin/api-keys', { name, expiresAt })
+  return data
+}
+
+export async function updateApiKey(id: string, updates: { enabled?: boolean }) {
+  const { data } = await api.patch(`/api/admin/api-keys/${id}`, updates)
+  return data
+}
+
+export async function deleteApiKey(id: string) {
+  const { data } = await api.delete(`/api/admin/api-keys/${id}`)
+  return data
+}
+
 export interface Conversation {
   id: string
   title: string
@@ -179,6 +208,7 @@ export interface RequestLogEntry {
   totalTokens: number | null
   error: string | null
   source: string | null
+  apiKeyName: string | null
   createdAt: string
 }
 

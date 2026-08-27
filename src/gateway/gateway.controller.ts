@@ -1,4 +1,5 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiKeyGuard } from '../auth/api-key.guard';
 import { RouterService } from '../router/router.service';
 import { GenerateDto } from './dto/generate.dto';
@@ -10,7 +11,7 @@ export class GatewayController {
   constructor(private router: RouterService) {}
 
   @Post('generate')
-  async generate(@Body() body: GenerateDto) {
+  async generate(@Body() body: GenerateDto, @Req() req: Request) {
     const messages: ChatMessage[] = [];
 
     if (body.system) {
@@ -27,6 +28,7 @@ export class GatewayController {
       {
         freeOnly: body.freeOnly,
         source: 'api',
+        apiKeyName: (req as unknown as Record<string, unknown>).apiKeyName as string,
       },
     );
 

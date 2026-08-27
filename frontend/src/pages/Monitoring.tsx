@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getMonitoring, type MonitoringData } from '@/lib/api'
-import { RefreshCw, AlertTriangle } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import ProviderIcon from '@/components/ProviderIcon'
 
@@ -47,26 +47,6 @@ export default function Monitoring() {
         <StatCard label="This week" value={overview.requestsThisWeek} />
       </div>
 
-      {(overview.rateLimitsToday > 0 || overview.errorsToday > 0) && (
-        <div className="flex gap-4 mb-8">
-          {overview.rateLimitsToday > 0 && (
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-warning/10 border border-warning/20">
-              <AlertTriangle size={16} className="text-warning" />
-              <span className="text-sm font-medium text-warning">
-                {overview.rateLimitsToday} rate limit{overview.rateLimitsToday > 1 ? 's' : ''} today
-              </span>
-            </div>
-          )}
-          {overview.errorsToday > 0 && (
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-destructive/10 border border-destructive/20">
-              <AlertTriangle size={16} className="text-destructive" />
-              <span className="text-sm font-medium text-destructive">
-                {overview.errorsToday} error{overview.errorsToday > 1 ? 's' : ''} today
-              </span>
-            </div>
-          )}
-        </div>
-      )}
 
       {providerStats.length > 0 && (
         <div className="mb-8">
@@ -137,7 +117,7 @@ export default function Monitoring() {
                   <th className="text-right py-2.5 px-4 font-medium text-muted-foreground">Latency</th>
                   <th className="text-right py-2.5 px-4 font-medium text-muted-foreground">In-Tokens</th>
                   <th className="text-right py-2.5 px-4 font-medium text-muted-foreground">Out-Tokens</th>
-                  <th className="text-left py-2.5 px-4 font-medium text-muted-foreground">Source</th>
+                  <th className="text-left py-2.5 px-4 font-medium text-muted-foreground">App</th>
                 </tr>
               </thead>
               <tbody>
@@ -163,7 +143,7 @@ export default function Monitoring() {
                     <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{log.latencyMs}ms</td>
                     <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{log.promptTokens || '-'}</td>
                     <td className="py-2.5 px-4 text-right font-mono text-muted-foreground">{log.completionTokens || '-'}</td>
-                    <td className="py-2.5 px-4 text-xs text-muted-foreground">{log.source}</td>
+                    <td className="py-2.5 px-4 text-xs text-muted-foreground">{log.apiKeyName || log.source}</td>
                   </tr>
                 ))}
               </tbody>

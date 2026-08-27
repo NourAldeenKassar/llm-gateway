@@ -7,6 +7,7 @@ export interface RouteOptions {
   provider?: string;
   freeOnly?: boolean;
   source?: string;
+  apiKeyName?: string;
 }
 
 @Injectable()
@@ -43,6 +44,7 @@ export class RouterService {
           latencyMs: Date.now() - start,
           usage: result.usage,
           source: options.source,
+          apiKeyName: options.apiKeyName,
         });
         return result;
       } catch (error) {
@@ -54,6 +56,7 @@ export class RouterService {
           latencyMs: Date.now() - start,
           error: error instanceof Error ? error.message : String(error),
           source: options.source,
+          apiKeyName: options.apiKeyName,
         });
         throw error;
       }
@@ -87,6 +90,7 @@ export class RouterService {
           latencyMs: Date.now() - start,
           usage: result.usage,
           source: options.source,
+          apiKeyName: options.apiKeyName,
         });
         return {
           ...result,
@@ -104,6 +108,7 @@ export class RouterService {
           latencyMs: Date.now() - start,
           error: message,
           source: options.source,
+          apiKeyName: options.apiKeyName,
         });
       }
     }
@@ -148,6 +153,7 @@ export class RouterService {
     usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
     error?: string;
     source?: string;
+    apiKeyName?: string;
   }): Promise<void> {
     try {
       await this.prisma.requestLog.create({
@@ -161,6 +167,7 @@ export class RouterService {
           totalTokens: data.usage?.total_tokens,
           error: data.error,
           source: data.source || 'api',
+          apiKeyName: data.apiKeyName,
         },
       });
     } catch (err) {

@@ -198,6 +198,54 @@ export class AdminController {
     return { success: true };
   }
 
+  @Get('api-keys')
+  @UseGuards(AdminGuard)
+  async listApiKeys() {
+    const keys = await this.prisma.apiKey.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    return keys.map((k) => ({
+      ...k,
+      key: maskKey(k.key),
+    }));
+  }
+
+  @Post('api-keys')
+  @UseGuards(AdminGuard)
+  async createApiKey(
+    @Body() body: { name: string; expiresAt?: string },
+  ) {
+    const key = `gw_${uuidv4().replace(/-/g, '')}`;
+    const apiKey = await this.prisma.apiKey.create({
+      data: {
+        name: body.name,
+        key,
+        expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
+      },
+    });
+    return { ...apiKey, key };
+  }
+
+  @Patch('api-keys/:id')
+  @UseGuards(AdminGuard)
+  async updateApiKey(
+    @Param('id') id: string,
+    @Body() body: { enabled?: boolean },
+  ) {
+    const apiKey = await this.prisma.apiKey.update({
+      where: { id },
+      data: body,
+    });
+    return { ...apiKey, key: maskKey(apiKey.key) };
+  }
+
+  @Delete('api-keys/:id')
+  @UseGuards(AdminGuard)
+  async deleteApiKey(@Param('id') id: string) {
+    await this.prisma.apiKey.delete({ where: { id } });
+    return { success: true };
+  }
+
   @Get('providers/:id/models')
   @UseGuards(AdminGuard)
   async listModels(@Param('id') id: string) {
@@ -339,6 +387,7 @@ export class AdminController {
         totalTokens: l.totalTokens,
         error: l.error,
         source: l.source,
+        apiKeyName: l.apiKeyName,
         createdAt: l.createdAt,
       })),
     };
