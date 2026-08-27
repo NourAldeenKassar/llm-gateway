@@ -24,5 +24,6 @@ export interface LlmResponse {
 export interface LlmProvider {
   readonly name: string;
   readonly isPaid: boolean;
+  readonly defaultModel: string;
   chat(request: LlmRequest): Promise<LlmResponse>;
 }

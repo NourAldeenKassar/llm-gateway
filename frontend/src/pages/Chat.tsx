@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import Markdown from 'react-markdown'
 import {
   listProviders,
   listModels,
@@ -249,13 +250,29 @@ export default function Chat() {
             <div
               key={i}
               className={cn(
-                'max-w-[80%] rounded-lg px-4 py-3',
+                'max-w-[80%] rounded-lg px-4 py-3 overflow-hidden',
                 msg.role === 'user'
                   ? 'ml-auto bg-primary text-primary-foreground'
                   : 'bg-muted',
               )}
             >
-              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+              <div className={cn(
+                'text-sm prose prose-sm max-w-none break-words',
+                '[&_pre]:bg-[#1a1a2e] [&_pre]:text-gray-300 [&_pre]:rounded-lg [&_pre]:p-3 [&_pre]:my-2 [&_pre]:text-xs [&_pre]:overflow-x-auto',
+                '[&_code]:bg-[#1a1a2e] [&_code]:text-gray-300 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs',
+                '[&_pre_code]:bg-transparent [&_pre_code]:p-0',
+                '[&_p]:my-1.5 [&_ul]:my-1.5 [&_ol]:my-1.5 [&_li]:my-0.5',
+                '[&_h1]:text-base [&_h1]:font-bold [&_h1]:mt-3 [&_h1]:mb-1.5',
+                '[&_h2]:text-sm [&_h2]:font-bold [&_h2]:mt-3 [&_h2]:mb-1.5',
+                '[&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1',
+                msg.role === 'user' ? '[&_code]:bg-white/20 [&_code]:text-primary-foreground' : '',
+              )}>
+                {msg.role === 'assistant' ? (
+                  <Markdown>{msg.content}</Markdown>
+                ) : (
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                )}
+              </div>
               {msg.provider && (
                 <p className="text-xs mt-2 opacity-60">
                   {msg.provider} / {msg.model}

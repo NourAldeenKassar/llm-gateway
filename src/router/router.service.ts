@@ -49,7 +49,7 @@ export class RouterService {
         const isRateLimit = this.isRateLimitError(error);
         await this.logRequest({
           provider: provider.name,
-          model: request.model || 'unknown',
+          model: request.model || provider.defaultModel,
           status: isRateLimit ? 'rate_limited' : 'error',
           latencyMs: Date.now() - start,
           error: error instanceof Error ? error.message : String(error),
@@ -96,7 +96,7 @@ export class RouterService {
         errors.push({ provider: provider.name, error: message });
         await this.logRequest({
           provider: provider.name,
-          model: request.model || 'unknown',
+          model: request.model || provider.defaultModel,
           status: isRateLimit ? 'rate_limited' : 'error',
           latencyMs: Date.now() - start,
           error: message,

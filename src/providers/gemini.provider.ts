@@ -13,7 +13,7 @@ export class GeminiProvider implements LlmProvider {
     public readonly name: string,
     public readonly isPaid: boolean,
     private readonly apiKey: string,
-    private readonly defaultModel: string,
+    public readonly defaultModel: string,
   ) {
     this.client = new GoogleGenerativeAI(this.apiKey);
   }
