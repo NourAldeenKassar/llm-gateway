@@ -23,7 +23,7 @@ export default function Layout({ onLogout }: LayoutProps) {
   ]
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen max-w-[100vw] overflow-hidden">
       <aside className="w-56 border-r border-border bg-muted/30 p-4 flex flex-col">
         <div className="flex items-center gap-3 mb-8 px-2">
           <img src="/favicon.svg" alt="LLM Gateway" className="w-8 h-8" />
@@ -60,7 +60,7 @@ export default function Layout({ onLogout }: LayoutProps) {
         </button>
       </aside>
 
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-8 min-w-0 overflow-hidden">
         <Outlet />
       </main>
     </div>

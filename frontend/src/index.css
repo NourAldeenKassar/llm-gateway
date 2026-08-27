@@ -25,7 +25,15 @@ body {
   color: var(--color-foreground);
 }
 
+.chat-markdown {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
 .chat-markdown pre {
+  word-break: normal;
+  overflow-wrap: normal;
   background: #1a1a2e;
   color: #d1d5db;
   border-radius: 0.5rem;
