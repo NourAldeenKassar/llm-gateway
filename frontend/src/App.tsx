@@ -7,6 +7,7 @@ import Providers from '@/pages/Providers'
 import Settings from '@/pages/Settings'
 import Chat from '@/pages/Chat'
 import Docs from '@/pages/Docs'
+import Monitoring from '@/pages/Monitoring'
 import Layout from '@/components/Layout'
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/docs" element={<Docs />} />
+        <Route path="/monitoring" element={<Monitoring />} />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

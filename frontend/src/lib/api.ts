@@ -155,3 +155,45 @@ export async function runHealthCheck(): Promise<HealthStatus> {
   const { data } = await api.post('/api/health/check')
   return data
 }
+
+export interface ProviderStat {
+  provider: string
+  model: string
+  total: number
+  success: number
+  errors: number
+  rateLimited: number
+  avgLatency: number
+  lastMinute: number
+  lastHour: number
+}
+
+export interface RequestLogEntry {
+  id: string
+  provider: string
+  model: string
+  status: string
+  latencyMs: number
+  totalTokens: number | null
+  error: string | null
+  source: string | null
+  createdAt: string
+}
+
+export interface MonitoringData {
+  overview: {
+    requestsToday: number
+    requestsThisWeek: number
+    requestsLastMinute: number
+    requestsLastHour: number
+    rateLimitsToday: number
+    errorsToday: number
+  }
+  providerStats: ProviderStat[]
+  recentLogs: RequestLogEntry[]
+}
+
+export async function getMonitoring(): Promise<MonitoringData> {
+  const { data } = await api.get('/api/admin/monitoring')
+  return data
+}

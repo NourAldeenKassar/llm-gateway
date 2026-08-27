@@ -40,6 +40,23 @@ model Message {
   createdAt      DateTime     @default(now())
 }
 
+model RequestLog {
+  id            String   @id @default(cuid())
+  provider      String
+  model         String
+  status        String   // "success" | "error" | "rate_limited"
+  latencyMs     Int
+  promptTokens  Int?
+  completionTokens Int?
+  totalTokens   Int?
+  error         String?
+  source        String?  // "api" | "admin_chat"
+  createdAt     DateTime @default(now())
+
+  @@index([provider, createdAt])
+  @@index([createdAt])
+}
+
 model HealthCheck {
   id        String   @id @default("latest")
   status    String   // "healthy" | "degraded" | "unhealthy"

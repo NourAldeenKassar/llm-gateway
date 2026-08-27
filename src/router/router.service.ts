@@ -6,6 +6,7 @@ import { LlmRequest, LlmResponse } from '../providers/provider.interface';
 export interface RouteOptions {
   provider?: string;
   freeOnly?: boolean;
+  source?: string;
 }
 
 @Injectable()
@@ -17,7 +18,10 @@ export class RouterService {
     private prisma: PrismaService,
   ) {}
 
-  async route(request: LlmRequest, options: RouteOptions): Promise<LlmResponse> {
+  async route(
+    request: LlmRequest,
+    options: RouteOptions,
+  ): Promise<LlmResponse> {
     if (options.provider) {
       const provider = await this.providerFactory.getProviderByName(
         options.provider,
@@ -28,7 +32,31 @@ export class RouterService {
           404,
         );
       }
-      return provider.chat(request);
+
+      const start = Date.now();
+      try {
+        const result = await provider.chat(request);
+        await this.logRequest({
+          provider: provider.name,
+          model: result.model,
+          status: 'success',
+          latencyMs: Date.now() - start,
+          usage: result.usage,
+          source: options.source,
+        });
+        return result;
+      } catch (error) {
+        const isRateLimit = this.isRateLimitError(error);
+        await this.logRequest({
+          provider: provider.name,
+          model: request.model || 'unknown',
+          status: isRateLimit ? 'rate_limited' : 'error',
+          latencyMs: Date.now() - start,
+          error: error instanceof Error ? error.message : String(error),
+          source: options.source,
+        });
+        throw error;
+      }
     }
 
     const freeOnly = await this.resolveFreeOnly(options.freeOnly);
@@ -40,10 +68,7 @@ export class RouterService {
 
     if (filtered.length === 0) {
       throw new HttpException(
-        {
-          error: 'No providers available',
-          freeOnly,
-        },
+        { error: 'No providers available', freeOnly },
         503,
       );
     }
@@ -51,21 +76,37 @@ export class RouterService {
     const errors: { provider: string; error: string }[] = [];
 
     for (const provider of filtered) {
+      const start = Date.now();
       try {
         this.logger.log(`Trying provider: ${provider.name}`);
-        return await provider.chat(request);
+        const result = await provider.chat(request);
+        await this.logRequest({
+          provider: provider.name,
+          model: result.model,
+          status: 'success',
+          latencyMs: Date.now() - start,
+          usage: result.usage,
+          source: options.source,
+        });
+        return result;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
+        const isRateLimit = this.isRateLimitError(error);
         this.logger.warn(`Provider ${provider.name} failed: ${message}`);
         errors.push({ provider: provider.name, error: message });
+        await this.logRequest({
+          provider: provider.name,
+          model: request.model || 'unknown',
+          status: isRateLimit ? 'rate_limited' : 'error',
+          latencyMs: Date.now() - start,
+          error: message,
+          source: options.source,
+        });
       }
     }
 
     throw new HttpException(
-      {
-        error: 'All providers failed',
-        providers_tried: errors,
-      },
+      { error: 'All providers failed', providers_tried: errors },
       503,
     );
   }
@@ -80,5 +121,47 @@ export class RouterService {
     });
 
     return config?.freeOnlyDefault ?? true;
+  }
+
+  private isRateLimitError(error: unknown): boolean {
+    if (error instanceof Error) {
+      const msg = error.message.toLowerCase();
+      return (
+        msg.includes('rate limit') ||
+        msg.includes('rate_limit') ||
+        msg.includes('429') ||
+        msg.includes('too many requests') ||
+        msg.includes('quota')
+      );
+    }
+    return false;
+  }
+
+  private async logRequest(data: {
+    provider: string;
+    model: string;
+    status: string;
+    latencyMs: number;
+    usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+    error?: string;
+    source?: string;
+  }): Promise<void> {
+    try {
+      await this.prisma.requestLog.create({
+        data: {
+          provider: data.provider,
+          model: data.model,
+          status: data.status,
+          latencyMs: data.latencyMs,
+          promptTokens: data.usage?.prompt_tokens,
+          completionTokens: data.usage?.completion_tokens,
+          totalTokens: data.usage?.total_tokens,
+          error: data.error,
+          source: data.source || 'api',
+        },
+      });
+    } catch (err) {
+      this.logger.error(`Failed to log request: ${err}`);
+    }
   }
 }

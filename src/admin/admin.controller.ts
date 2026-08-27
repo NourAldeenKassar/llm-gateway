@@ -245,6 +245,103 @@ export class AdminController {
     }
   }
 
+  @Get('monitoring')
+  @UseGuards(AdminGuard)
+  async getMonitoring() {
+    const now = new Date();
+    const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const [
+      totalToday,
+      totalWeek,
+      lastMinute,
+      lastHour,
+      rateLimitsToday,
+      errorsToday,
+      providerStats,
+      recentLogs,
+    ] = await Promise.all([
+      this.prisma.requestLog.count({ where: { createdAt: { gte: oneDayAgo } } }),
+      this.prisma.requestLog.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+      this.prisma.requestLog.count({ where: { createdAt: { gte: oneMinuteAgo } } }),
+      this.prisma.requestLog.count({ where: { createdAt: { gte: oneHourAgo } } }),
+      this.prisma.requestLog.count({
+        where: { createdAt: { gte: oneDayAgo }, status: 'rate_limited' },
+      }),
+      this.prisma.requestLog.count({
+        where: { createdAt: { gte: oneDayAgo }, status: 'error' },
+      }),
+      this.prisma.$queryRaw<
+        {
+          provider: string;
+          model: string;
+          total: bigint;
+          success: bigint;
+          errors: bigint;
+          rate_limited: bigint;
+          avg_latency: number;
+          last_minute: bigint;
+          last_hour: bigint;
+        }[]
+      >`
+        SELECT
+          provider,
+          model,
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE status = 'success') as success,
+          COUNT(*) FILTER (WHERE status = 'error') as errors,
+          COUNT(*) FILTER (WHERE status = 'rate_limited') as rate_limited,
+          ROUND(AVG(CAST("latencyMs" AS numeric))) as avg_latency,
+          COUNT(*) FILTER (WHERE "createdAt" > ${oneMinuteAgo}) as last_minute,
+          COUNT(*) FILTER (WHERE "createdAt" > ${oneHourAgo}) as last_hour
+        FROM "RequestLog"
+        WHERE "createdAt" > ${sevenDaysAgo}
+        GROUP BY provider, model
+        ORDER BY total DESC
+      `,
+      this.prisma.requestLog.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      }),
+    ]);
+
+    return {
+      overview: {
+        requestsToday: totalToday,
+        requestsThisWeek: totalWeek,
+        requestsLastMinute: lastMinute,
+        requestsLastHour: lastHour,
+        rateLimitsToday,
+        errorsToday,
+      },
+      providerStats: providerStats.map((s) => ({
+        provider: s.provider,
+        model: s.model,
+        total: Number(s.total),
+        success: Number(s.success),
+        errors: Number(s.errors),
+        rateLimited: Number(s.rate_limited),
+        avgLatency: Number(s.avg_latency),
+        lastMinute: Number(s.last_minute),
+        lastHour: Number(s.last_hour),
+      })),
+      recentLogs: recentLogs.map((l) => ({
+        id: l.id,
+        provider: l.provider,
+        model: l.model,
+        status: l.status,
+        latencyMs: l.latencyMs,
+        totalTokens: l.totalTokens,
+        error: l.error,
+        source: l.source,
+        createdAt: l.createdAt,
+      })),
+    };
+  }
+
   @Get('conversations')
   @UseGuards(AdminGuard)
   async listConversations() {
@@ -321,6 +418,7 @@ export class AdminController {
       {
         provider: body.provider,
         freeOnly: body.freeOnly,
+        source: 'admin_chat',
       },
     );
 

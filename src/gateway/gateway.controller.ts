@@ -26,6 +26,7 @@ export class GatewayController {
       },
       {
         freeOnly: body.freeOnly,
+        source: 'api',
       },
     );
 
