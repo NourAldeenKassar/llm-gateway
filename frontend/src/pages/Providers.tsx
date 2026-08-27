@@ -17,6 +17,7 @@ const PROVIDER_PRESETS = [
   { name: 'gemini', displayName: 'Google Gemini', type: 'gemini', baseUrl: null, defaultModel: 'gemini-3.6-flash', isPaid: false },
   { name: 'mistral', displayName: 'Mistral', type: 'openai-compat', baseUrl: 'https://api.mistral.ai/v1', defaultModel: 'mistral-small-latest', isPaid: false },
   { name: 'openai', displayName: 'OpenAI', type: 'openai-compat', baseUrl: null, defaultModel: 'gpt-4o-mini', isPaid: true },
+  { name: 'grok', displayName: 'Grok (xAI)', type: 'openai-compat', baseUrl: 'https://api.x.ai/v1', defaultModel: 'grok-3-mini-fast', isPaid: true },
 ]
 
 export default function Providers() {

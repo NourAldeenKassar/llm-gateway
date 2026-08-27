@@ -5,6 +5,7 @@ const PROVIDER_ICONS: Record<string, string> = {
   openai: '/providers/openai.png',
   gemini: '/providers/gemini.png',
   mistral: '/providers/mistral.png',
+  grok: '/providers/grok.png',
 }
 
 interface ProviderIconProps {
