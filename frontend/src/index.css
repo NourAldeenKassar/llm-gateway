@@ -24,3 +24,84 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
 }
+
+.chat-markdown pre {
+  background: #1a1a2e;
+  color: #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+}
+
+.chat-markdown pre code {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+.chat-markdown code {
+  background: #1a1a2e;
+  color: #d1d5db;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+}
+
+.chat-markdown.user-msg code {
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+}
+
+.chat-markdown p {
+  margin: 0.375rem 0;
+}
+
+.chat-markdown h1, .chat-markdown h2, .chat-markdown h3 {
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.375rem;
+}
+
+.chat-markdown h1 { font-size: 1rem; }
+.chat-markdown h2 { font-size: 0.9375rem; }
+.chat-markdown h3 { font-size: 0.875rem; }
+
+.chat-markdown ul, .chat-markdown ol {
+  margin: 0.375rem 0;
+  padding-left: 1.5rem;
+}
+
+.chat-markdown ul { list-style-type: disc; }
+.chat-markdown ol { list-style-type: decimal; }
+
+.chat-markdown li {
+  margin: 0.25rem 0;
+}
+
+.chat-markdown blockquote {
+  border-left: 3px solid var(--color-border);
+  padding-left: 0.75rem;
+  margin: 0.5rem 0;
+  color: var(--color-muted-foreground);
+}
+
+.chat-markdown hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 0.75rem 0;
+}
+
+.chat-markdown strong {
+  font-weight: 600;
+}
+
+.chat-markdown a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
