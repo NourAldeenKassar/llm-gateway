@@ -152,7 +152,7 @@ export default function Chat() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] gap-4">
+    <div className="flex h-[calc(100vh-4rem)] gap-4 overflow-hidden">
       <div className="w-64 flex flex-col border border-border rounded-lg shrink-0">
         <div className="p-3 border-b border-border">
           <button
@@ -196,7 +196,7 @@ export default function Chat() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         <div className="flex items-center justify-end gap-2 mb-4">
           <select
             value={selectedProvider}
@@ -240,7 +240,7 @@ export default function Chat() {
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto border border-border rounded-lg p-4 mb-4 space-y-4">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden border border-border rounded-lg p-4 mb-4 space-y-4">
           {messages.length === 0 && (
             <p className="text-muted-foreground text-sm text-center mt-8">
               Send a message to start a conversation.
