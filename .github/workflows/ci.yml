@@ -41,6 +41,7 @@ jobs:
 
       - run: npm ci --ignore-scripts
       - run: npx prisma generate
+      - run: npm test
       - run: npm run build
 
   docker:
