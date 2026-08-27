@@ -5,8 +5,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Request } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
+import { API_KEY_NAME } from './api-key-name.decorator';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
@@ -16,7 +16,7 @@ export class ApiKeyGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest();
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -33,13 +33,13 @@ export class ApiKeyGuard implements CanActivate {
       if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
         throw new UnauthorizedException('API key expired');
       }
-      (request as unknown as Record<string, unknown>).apiKeyName = apiKey.name;
+      request[API_KEY_NAME] = apiKey.name;
       return true;
     }
 
     const envKey = this.config.get<string>('GATEWAY_API_KEY');
     if (envKey && key === envKey) {
-      (request as unknown as Record<string, unknown>).apiKeyName = 'env';
+      request[API_KEY_NAME] = 'env';
       return true;
     }
 
