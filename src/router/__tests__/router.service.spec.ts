@@ -154,27 +154,19 @@ describe('RouterService', () => {
       ]);
     });
 
-    it('filters out paid providers when freeOnly is true', async () => {
+    it('passes freeOnly to getEnabledProviders', async () => {
       const groq = createMockProvider('groq', false, {
         content: 'free',
         model: 'llama-3',
       });
-      const openai = createMockProvider('openai', true, {
-        content: 'paid',
-        model: 'gpt-4',
-      });
-      mockProviderFactory.getEnabledProviders.mockResolvedValue([
-        groq,
-        openai,
-      ]);
+      mockProviderFactory.getEnabledProviders.mockResolvedValue([groq]);
 
-      const result = await service.route(
+      await service.route(
         { messages: [{ role: 'user', content: 'hi' }] },
         { freeOnly: true },
       );
 
-      expect(result.content).toBe('free');
-      expect(openai.chat).not.toHaveBeenCalled();
+      expect(mockProviderFactory.getEnabledProviders).toHaveBeenCalledWith(true);
     });
 
     it('returns 503 when no providers available', async () => {
@@ -258,11 +250,7 @@ describe('RouterService', () => {
 
   describe('freeOnly default', () => {
     it('uses default freeOnly from GatewayConfig', async () => {
-      const openai = createMockProvider('openai', true, {
-        content: 'paid',
-        model: 'gpt-4',
-      });
-      mockProviderFactory.getEnabledProviders.mockResolvedValue([openai]);
+      mockProviderFactory.getEnabledProviders.mockResolvedValue([]);
       mockPrisma.gatewayConfig.findUnique.mockResolvedValue({
         freeOnlyDefault: true,
       });
@@ -273,6 +261,8 @@ describe('RouterService', () => {
           {},
         ),
       ).rejects.toThrow(HttpException);
+
+      expect(mockProviderFactory.getEnabledProviders).toHaveBeenCalledWith(true);
     });
   });
 });

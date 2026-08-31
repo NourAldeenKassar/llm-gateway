@@ -63,13 +63,9 @@ export class RouterService {
     }
 
     const freeOnly = await this.resolveFreeOnly(options.freeOnly);
-    const providers = await this.providerFactory.getEnabledProviders();
+    const providers = await this.providerFactory.getEnabledProviders(freeOnly);
 
-    const filtered = freeOnly
-      ? providers.filter((p) => !p.isPaid)
-      : providers;
-
-    if (filtered.length === 0) {
+    if (providers.length === 0) {
       throw new HttpException(
         { error: 'No providers available', freeOnly },
         503,
@@ -78,7 +74,7 @@ export class RouterService {
 
     const errors: { provider: string; error: string }[] = [];
 
-    for (const provider of filtered) {
+    for (const provider of providers) {
       const start = Date.now();
       try {
         this.logger.log(`Trying provider: ${provider.name}`);

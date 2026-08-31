@@ -33,9 +33,12 @@ export class ProviderFactory {
     }
   }
 
-  async getEnabledProviders(): Promise<LlmProvider[]> {
+  async getEnabledProviders(freeOnly?: boolean): Promise<LlmProvider[]> {
     const configs = await this.prisma.provider.findMany({
-      where: { enabled: true },
+      where: {
+        enabled: true,
+        ...(freeOnly && { isPaid: false }),
+      },
       orderBy: { priority: 'asc' },
     });
 
