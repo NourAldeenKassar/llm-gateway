@@ -122,7 +122,10 @@ export class AdminController {
     try {
       const provider = this.providerFactory.createFromConfig(config);
       const result = await provider.chat({
-        messages: [{ role: 'user', content: 'Say "ok" and nothing else.' }],
+        messages: [
+          { role: 'system', content: 'You are a test bot.' },
+          { role: 'user', content: 'Say "ok" and nothing else.' },
+        ],
         max_tokens: 10,
       });
 
