@@ -32,7 +32,10 @@ export class GeminiProvider implements LlmProvider {
     const chat = model.startChat({
       history,
       ...(systemMessage && {
-        systemInstruction: systemMessage.content,
+        systemInstruction: {
+          role: 'user',
+          parts: [{ text: systemMessage.content }],
+        },
       }),
       generationConfig: {
         temperature: request.temperature ?? 0.7,
