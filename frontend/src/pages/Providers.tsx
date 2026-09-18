@@ -190,8 +190,8 @@ function SortableProvider({
       {testResults[p.id] && (
         <div className={cn('mt-3 text-sm p-2 rounded-md', testResults[p.id].success ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive')}>
           {testResults[p.id].success
-            ? `OK — responded: "${testResults[p.id].response}"`
-            : `Failed — ${testResults[p.id].error}`}
+            ? `OK: "${testResults[p.id].response}"`
+            : `Failed: ${testResults[p.id].error}`}
         </div>
       )}
     </div>
@@ -317,7 +317,7 @@ export default function Providers() {
 
       {showAdd && <AddProviderPanel presets={PROVIDER_PRESETS} onAdd={handleAdd} />}
 
-      <p className="text-xs text-muted-foreground mb-3">Drag to reorder priority — top provider is tried first</p>
+      <p className="text-xs text-muted-foreground mb-3">Drag to reorder priority. Top provider is tried first.</p>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={providers.map((p) => p.id)} strategy={verticalListSortingStrategy}>
