@@ -9,6 +9,10 @@ export class GenerateDto {
   system?: string;
 
   @IsOptional()
+  @IsString()
+  provider?: string;
+
+  @IsOptional()
   @IsBoolean()
   freeOnly?: boolean;
 

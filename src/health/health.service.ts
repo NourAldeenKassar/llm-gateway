@@ -80,7 +80,10 @@ export class HealthService implements OnModuleInit {
         try {
           const provider = this.providerFactory.createFromConfig(config);
           await provider.chat({
-            messages: [{ role: 'user', content: 'Say ok' }],
+            messages: [
+              { role: 'system', content: 'You are a health check bot.' },
+              { role: 'user', content: 'Say ok' },
+            ],
             max_tokens: 5,
           });
           return {
