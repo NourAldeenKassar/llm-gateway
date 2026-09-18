@@ -111,6 +111,20 @@ export class AdminController {
     return { success: true };
   }
 
+  @Post('providers/reorder')
+  @UseGuards(AdminGuard)
+  async reorderProviders(@Body() body: { ids: string[] }) {
+    await Promise.all(
+      body.ids.map((id, index) =>
+        this.prisma.provider.update({
+          where: { id },
+          data: { priority: index },
+        }),
+      ),
+    );
+    return { success: true };
+  }
+
   @Post('providers/:id/test')
   @UseGuards(AdminGuard)
   async testProvider(@Param('id') id: string) {
