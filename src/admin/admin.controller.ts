@@ -140,8 +140,16 @@ export class AdminController {
           { role: 'system', content: 'You are a test bot.' },
           { role: 'user', content: 'Say "ok" and nothing else.' },
         ],
-        max_tokens: 10,
+        max_tokens: 50,
       });
+
+      if (!result.content || !result.content.trim()) {
+        return {
+          success: false,
+          error: 'Provider returned empty response',
+          model: result.model,
+        };
+      }
 
       return {
         success: true,
