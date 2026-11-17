@@ -44,6 +44,7 @@ model ApiKey {
   id        String    @id @default(cuid())
   name      String
   key       String    @unique
+  tier      String    @default("free") // "free" | "paid" | "any"
   expiresAt DateTime?
   enabled   Boolean   @default(true)
   createdAt DateTime  @default(now())

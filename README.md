@@ -6,8 +6,8 @@ Self-hosted API gateway that routes requests to multiple LLM providers with auto
 
 - **Single endpoint** -- apps send a prompt, the gateway picks the best available provider
 - **Automatic fallback** -- if a provider fails or rate-limits, the next one in the chain is tried
-- **Free vs paid control** -- `freeOnly` param ensures apps never hit paid providers unless explicitly allowed
-- **Per-app API keys** -- create API keys for each app with optional expiry, track usage per app
+- **Tiered API keys** -- each key is free, paid or any; the gateway enforces it, so an app cannot choose its own tier
+- **Per-app API keys** -- create API keys for each app with a tier and optional expiry, track usage per app
 - **Admin dashboard** -- add/remove providers, configure priorities, inline editing, provider health checks
 - **Chat playground** -- test providers directly from the dashboard with conversation history and markdown rendering
 - **Monitoring** -- per-provider usage stats, request logs with in/out tokens, latency tracking, rate limit detection
@@ -30,7 +30,7 @@ Self-hosted API gateway that routes requests to multiple LLM providers with auto
 
 - **Backend:** NestJS, Prisma, PostgreSQL
 - **Frontend:** React, Vite, Tailwind CSS
-- **Testing:** Jest, 38 unit tests
+- **Testing:** Jest, 49 unit tests
 - **Deployment:** Docker, GitHub Actions, GHCR
 
 ## API
@@ -47,13 +47,12 @@ Authorization: Bearer <API_KEY>
 {
   "prompt": "What is 2+2?",
   "system": "Be concise.",
-  "freeOnly": true,
   "temperature": 0.7,
   "maxTokens": 500
 }
 ```
 
-Only `prompt` is required. Set `freeOnly: true` to restrict to free-tier providers, `false` to allow paid.
+Only `prompt` is required. The request cannot choose between free and paid providers -- that is decided by the tier of the API key (see [Key Tiers](#key-tiers)).
 
 **Response:**
 ```json
@@ -77,9 +76,40 @@ When a fallback occurs, the response includes which providers failed:
 }
 ```
 
+**Errors:**
+
+| Status | Meaning |
+|---|---|
+| 401 | Missing or invalid API key |
+| 403 | The pinned provider is not allowed on this key's tier |
+| 503 | Every provider on the key's tier failed, or none are configured |
+
 ### GET `/api/health`
 
 No auth required. Returns system status and provider health (cached from last manual check).
+
+## Key Tiers
+
+Every API key has a tier, set when the key is created and changeable from the dashboard. The gateway decides which providers a request may reach based on that tier alone, so an app cannot grant itself paid access.
+
+| Tier | Providers it can reach |
+|---|---|
+| `free` | Free providers only |
+| `paid` | Paid providers only |
+| `any` | Both, in priority order |
+
+Routing is **strict**: a `paid` key never falls back to a free provider, and a `free` key never reaches a paid one. If every provider on the key's tier fails, the request returns 503 rather than silently downgrading.
+
+To give one app both, issue it two keys:
+
+```
+stock-app-free     tier: free    used for summaries
+stock-app-premium  tier: paid    used for the premium feature
+```
+
+Because `RequestLog` records the key name per request, each one shows up separately in the dashboard stats.
+
+Keys created before this feature existed default to `free`. Upgrade them in Settings.
 
 ## Local Development
 

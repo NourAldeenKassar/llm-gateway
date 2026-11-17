@@ -6,9 +6,6 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { LlmProvider } from '../../providers/provider.interface';
 
 const mockPrisma = {
-  gatewayConfig: {
-    findUnique: jest.fn(),
-  },
   requestLog: {
     create: jest.fn(),
   },
@@ -95,9 +92,6 @@ describe('RouterService', () => {
         model: 'llama-3',
       });
       mockProviderFactory.getEnabledProviders.mockResolvedValue([groq]);
-      mockPrisma.gatewayConfig.findUnique.mockResolvedValue({
-        freeOnlyDefault: false,
-      });
 
       const result = await service.route(
         { messages: [{ role: 'user', content: 'hi' }] },
@@ -117,9 +111,6 @@ describe('RouterService', () => {
         groq,
         gemini,
       ]);
-      mockPrisma.gatewayConfig.findUnique.mockResolvedValue({
-        freeOnlyDefault: false,
-      });
 
       const result = await service.route(
         { messages: [{ role: 'user', content: 'hi' }] },
@@ -140,9 +131,6 @@ describe('RouterService', () => {
         groq,
         gemini,
       ]);
-      mockPrisma.gatewayConfig.findUnique.mockResolvedValue({
-        freeOnlyDefault: false,
-      });
 
       const result = await service.route(
         { messages: [{ role: 'user', content: 'hi' }] },
@@ -154,26 +142,53 @@ describe('RouterService', () => {
       ]);
     });
 
-    it('passes freeOnly to getEnabledProviders', async () => {
-      const groq = createMockProvider('groq', false, {
-        content: 'free',
-        model: 'llama-3',
+    it('passes the tier to getEnabledProviders', async () => {
+      const gpt = createMockProvider('openai', true, {
+        content: 'premium',
+        model: 'gpt-5',
       });
-      mockProviderFactory.getEnabledProviders.mockResolvedValue([groq]);
+      mockProviderFactory.getEnabledProviders.mockResolvedValue([gpt]);
 
       await service.route(
         { messages: [{ role: 'user', content: 'hi' }] },
-        { freeOnly: true },
+        { tier: 'paid' },
       );
 
-      expect(mockProviderFactory.getEnabledProviders).toHaveBeenCalledWith(true);
+      expect(mockProviderFactory.getEnabledProviders).toHaveBeenCalledWith(
+        'paid',
+      );
+    });
+
+    it('defaults to the free tier when no tier is given', async () => {
+      const groq = createMockProvider('groq', false);
+      mockProviderFactory.getEnabledProviders.mockResolvedValue([groq]);
+
+      await service.route({ messages: [{ role: 'user', content: 'hi' }] }, {});
+
+      expect(mockProviderFactory.getEnabledProviders).toHaveBeenCalledWith(
+        'free',
+      );
+    });
+
+    it('never falls back to free when the paid tier is exhausted', async () => {
+      const gpt = createMockProvider('openai', true, undefined, 'down');
+      mockProviderFactory.getEnabledProviders.mockResolvedValue([gpt]);
+
+      await expect(
+        service.route(
+          { messages: [{ role: 'user', content: 'hi' }] },
+          { tier: 'paid' },
+        ),
+      ).rejects.toThrow(HttpException);
+
+      expect(mockProviderFactory.getEnabledProviders).toHaveBeenCalledTimes(1);
+      expect(mockProviderFactory.getEnabledProviders).toHaveBeenCalledWith(
+        'paid',
+      );
     });
 
     it('returns 503 when no providers available', async () => {
       mockProviderFactory.getEnabledProviders.mockResolvedValue([]);
-      mockPrisma.gatewayConfig.findUnique.mockResolvedValue({
-        freeOnlyDefault: false,
-      });
 
       await expect(
         service.route(
@@ -190,9 +205,6 @@ describe('RouterService', () => {
         groq,
         gemini,
       ]);
-      mockPrisma.gatewayConfig.findUnique.mockResolvedValue({
-        freeOnlyDefault: false,
-      });
 
       await expect(
         service.route(
@@ -248,21 +260,63 @@ describe('RouterService', () => {
     });
   });
 
-  describe('freeOnly default', () => {
-    it('uses default freeOnly from GatewayConfig', async () => {
-      mockProviderFactory.getEnabledProviders.mockResolvedValue([]);
-      mockPrisma.gatewayConfig.findUnique.mockResolvedValue({
-        freeOnlyDefault: true,
-      });
+  describe('tier enforcement on pinned providers', () => {
+    it('returns 403 when a free-tier key pins a paid provider', async () => {
+      const gpt = createMockProvider('openai', true);
+      mockProviderFactory.getProviderByName.mockResolvedValue(gpt);
 
       await expect(
         service.route(
           { messages: [{ role: 'user', content: 'hi' }] },
-          {},
+          { provider: 'openai', tier: 'free' },
         ),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toMatchObject({ status: 403 });
 
-      expect(mockProviderFactory.getEnabledProviders).toHaveBeenCalledWith(true);
+      expect(gpt.chat).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when a paid-tier key pins a free provider', async () => {
+      const groq = createMockProvider('groq', false);
+      mockProviderFactory.getProviderByName.mockResolvedValue(groq);
+
+      await expect(
+        service.route(
+          { messages: [{ role: 'user', content: 'hi' }] },
+          { provider: 'groq', tier: 'paid' },
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+
+      expect(groq.chat).not.toHaveBeenCalled();
+    });
+
+    it('allows a paid-tier key to pin a paid provider', async () => {
+      const gpt = createMockProvider('openai', true, {
+        content: 'premium answer',
+        model: 'gpt-5',
+      });
+      mockProviderFactory.getProviderByName.mockResolvedValue(gpt);
+
+      const result = await service.route(
+        { messages: [{ role: 'user', content: 'hi' }] },
+        { provider: 'openai', tier: 'paid' },
+      );
+
+      expect(result.content).toBe('premium answer');
+    });
+
+    it('allows the any tier to pin either kind of provider', async () => {
+      const gpt = createMockProvider('openai', true, {
+        content: 'ok',
+        model: 'gpt-5',
+      });
+      mockProviderFactory.getProviderByName.mockResolvedValue(gpt);
+
+      const result = await service.route(
+        { messages: [{ role: 'user', content: 'hi' }] },
+        { provider: 'openai', tier: 'any' },
+      );
+
+      expect(result.content).toBe('ok');
     });
   });
 });

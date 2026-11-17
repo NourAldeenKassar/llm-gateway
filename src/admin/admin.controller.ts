@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -22,6 +23,7 @@ import { UpdateProviderDto } from './dto/update-provider.dto';
 import { UpdateConfigDto } from './dto/update-config.dto';
 import { AdminChatDto } from './dto/admin-chat.dto';
 import { ChatMessage } from '../providers/provider.interface';
+import { AccessTier } from '../providers/tier';
 
 @Controller('api/admin')
 export class AdminController {
@@ -238,13 +240,16 @@ export class AdminController {
   @Post('api-keys')
   @UseGuards(AdminGuard)
   async createApiKey(
-    @Body() body: { name: string; expiresAt?: string },
+    @Body() body: { name: string; tier?: string; expiresAt?: string },
   ) {
     const key = `gw_${uuidv4().replace(/-/g, '')}`;
     const apiKey = await this.prisma.apiKey.create({
       data: {
         name: body.name,
         key,
+        tier: body.tier
+          ? assertTier(body.tier)
+          : await this.defaultKeyTier(),
         expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
       },
     });
@@ -255,11 +260,14 @@ export class AdminController {
   @UseGuards(AdminGuard)
   async updateApiKey(
     @Param('id') id: string,
-    @Body() body: { enabled?: boolean },
+    @Body() body: { enabled?: boolean; tier?: string },
   ) {
     const apiKey = await this.prisma.apiKey.update({
       where: { id },
-      data: body,
+      data: {
+        ...(body.enabled !== undefined && { enabled: body.enabled }),
+        ...(body.tier !== undefined && { tier: assertTier(body.tier) }),
+      },
     });
     return { ...apiKey, key: maskKey(apiKey.key) };
   }
@@ -493,7 +501,7 @@ export class AdminController {
       },
       {
         provider: body.provider,
-        freeOnly: body.freeOnly,
+        tier: body.freeOnly === true ? 'free' : 'any',
         source: 'admin_chat',
       },
     );
@@ -521,6 +529,22 @@ export class AdminController {
       ...(result.failedProviders && { failedProviders: result.failedProviders }),
     };
   }
+
+  private async defaultKeyTier(): Promise<AccessTier> {
+    const config = await this.prisma.gatewayConfig.findUnique({
+      where: { id: 'default' },
+    });
+    return config?.freeOnlyDefault === false ? 'any' : 'free';
+  }
+}
+
+function assertTier(value: string): AccessTier {
+  if (value !== 'free' && value !== 'paid' && value !== 'any') {
+    throw new BadRequestException(
+      `Invalid tier "${value}". Must be "free", "paid" or "any".`,
+    );
+  }
+  return value;
 }
 
 function maskKey(key: string): string {

@@ -6,7 +6,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import { API_KEY_NAME } from './api-key-name.decorator';
+import { API_KEY_CONTEXT } from './api-key-name.decorator';
+import { parseTier } from '../providers/tier';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
@@ -33,13 +34,16 @@ export class ApiKeyGuard implements CanActivate {
       if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
         throw new UnauthorizedException('API key expired');
       }
-      request[API_KEY_NAME] = apiKey.name;
+      request[API_KEY_CONTEXT] = {
+        name: apiKey.name,
+        tier: parseTier(apiKey.tier),
+      };
       return true;
     }
 
     const envKey = this.config.get<string>('GATEWAY_API_KEY');
     if (envKey && key === envKey) {
-      request[API_KEY_NAME] = 'env';
+      request[API_KEY_CONTEXT] = { name: 'env', tier: 'any' };
       return true;
     }
 

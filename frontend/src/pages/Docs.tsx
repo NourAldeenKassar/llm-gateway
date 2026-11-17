@@ -5,7 +5,7 @@ const endpoints = [
     method: 'POST',
     path: '/api/generate',
     auth: 'API Key',
-    description: 'Generate a text response from the best available provider. The gateway handles provider selection and fallback automatically.',
+    description: 'Generate a text response from the best available provider. The gateway handles provider selection and fallback automatically. Which providers it may choose from is decided by the tier of your API key, not by the request. A free key can never reach a paid provider, and a paid key never falls back to a free one.',
     request: {
       headers: {
         'Authorization': 'Bearer <GATEWAY_API_KEY>',
@@ -14,7 +14,6 @@ const endpoints = [
       body: [
         { name: 'prompt', type: 'string', required: true, description: 'The prompt to send' },
         { name: 'system', type: 'string', required: false, description: 'System message for context' },
-        { name: 'freeOnly', type: 'boolean', required: false, description: 'Restrict to free-tier providers (default: from settings)' },
         { name: 'temperature', type: 'number', required: false, description: 'Sampling temperature (default: 0.7)' },
         { name: 'maxTokens', type: 'number', required: false, description: 'Maximum tokens in response' },
       ],
@@ -23,8 +22,7 @@ const endpoints = [
   -H "Authorization: Bearer your-key" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "prompt": "What is 2+2?",
-    "freeOnly": true
+    "prompt": "What is 2+2?"
   }'`,
     response: `{
   "text": "4",
@@ -33,7 +31,8 @@ const endpoints = [
 }`,
     errors: [
       { status: 401, description: 'Missing or invalid API key' },
-      { status: 503, description: 'All providers failed or none available' },
+      { status: 403, description: "Requested provider is not allowed on this key's tier" },
+      { status: 503, description: "All providers on the key's tier failed, or none are configured" },
     ],
   },
   {

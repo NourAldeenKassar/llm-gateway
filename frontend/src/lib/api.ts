@@ -94,10 +94,13 @@ export async function updateConfig(updates: Partial<GatewayConfig>) {
   return data
 }
 
+export type AccessTier = 'free' | 'paid' | 'any'
+
 export interface ApiKey {
   id: string
   name: string
   key: string
+  tier: AccessTier
   expiresAt: string | null
   enabled: boolean
   createdAt: string
@@ -108,12 +111,12 @@ export async function listApiKeys(): Promise<ApiKey[]> {
   return data
 }
 
-export async function createApiKey(name: string, expiresAt?: string): Promise<ApiKey> {
-  const { data } = await api.post('/api/admin/api-keys', { name, expiresAt })
+export async function createApiKey(name: string, tier: AccessTier, expiresAt?: string): Promise<ApiKey> {
+  const { data } = await api.post('/api/admin/api-keys', { name, tier, expiresAt })
   return data
 }
 
-export async function updateApiKey(id: string, updates: { enabled?: boolean }) {
+export async function updateApiKey(id: string, updates: { enabled?: boolean; tier?: AccessTier }) {
   const { data } = await api.patch(`/api/admin/api-keys/${id}`, updates)
   return data
 }

@@ -1,6 +1,9 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiKeyGuard } from '../auth/api-key.guard';
-import { GetApiKeyName } from '../auth/api-key-name.decorator';
+import {
+  ApiKeyContext,
+  GetApiKeyContext,
+} from '../auth/api-key-name.decorator';
 import { RouterService } from '../router/router.service';
 import { GenerateDto } from './dto/generate.dto';
 import { ChatMessage } from '../providers/provider.interface';
@@ -13,7 +16,7 @@ export class GatewayController {
   @Post('generate')
   async generate(
     @Body() body: GenerateDto,
-    @GetApiKeyName() apiKeyName: string,
+    @GetApiKeyContext() apiKey: ApiKeyContext,
   ) {
     const messages: ChatMessage[] = [];
 
@@ -29,9 +32,9 @@ export class GatewayController {
         max_tokens: body.maxTokens,
       },
       {
-        freeOnly: body.freeOnly,
+        tier: apiKey.tier,
         source: 'api',
-        apiKeyName,
+        apiKeyName: apiKey.name,
       },
     );
 

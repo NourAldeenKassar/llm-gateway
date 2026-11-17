@@ -3,7 +3,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiKeyGuard } from '../api-key.guard';
 import { PrismaService } from '../../prisma/prisma.service';
-import { API_KEY_NAME } from '../api-key-name.decorator';
+import { API_KEY_CONTEXT } from '../api-key-name.decorator';
 
 const mockPrisma = {
   apiKey: {
@@ -61,6 +61,7 @@ describe('ApiKeyGuard', () => {
     mockPrisma.apiKey.findUnique.mockResolvedValue({
       key: 'gw_valid',
       name: 'my-app',
+      tier: 'free',
       enabled: true,
       expiresAt: null,
     });
@@ -69,7 +70,46 @@ describe('ApiKeyGuard', () => {
     const result = await guard.canActivate(ctx as never);
 
     expect(result).toBe(true);
-    expect(ctx.request[API_KEY_NAME]).toBe('my-app');
+    expect(ctx.request[API_KEY_CONTEXT]).toEqual({
+      name: 'my-app',
+      tier: 'free',
+    });
+  });
+
+  it('attaches the paid tier from the key', async () => {
+    mockPrisma.apiKey.findUnique.mockResolvedValue({
+      key: 'gw_premium',
+      name: 'premium-app',
+      tier: 'paid',
+      enabled: true,
+      expiresAt: null,
+    });
+
+    const ctx = mockContext('Bearer gw_premium');
+    await guard.canActivate(ctx as never);
+
+    expect(ctx.request[API_KEY_CONTEXT]).toEqual({
+      name: 'premium-app',
+      tier: 'paid',
+    });
+  });
+
+  it('falls back to the free tier for an unrecognised tier value', async () => {
+    mockPrisma.apiKey.findUnique.mockResolvedValue({
+      key: 'gw_odd',
+      name: 'odd-app',
+      tier: 'platinum',
+      enabled: true,
+      expiresAt: null,
+    });
+
+    const ctx = mockContext('Bearer gw_odd');
+    await guard.canActivate(ctx as never);
+
+    expect(ctx.request[API_KEY_CONTEXT]).toEqual({
+      name: 'odd-app',
+      tier: 'free',
+    });
   });
 
   it('rejects disabled DB API key', async () => {
@@ -104,7 +144,10 @@ describe('ApiKeyGuard', () => {
     const result = await guard.canActivate(ctx as never);
 
     expect(result).toBe(true);
-    expect(ctx.request[API_KEY_NAME]).toBe('env');
+    expect(ctx.request[API_KEY_CONTEXT]).toEqual({
+      name: 'env',
+      tier: 'any',
+    });
   });
 
   it('rejects invalid key when no DB match and no env match', async () => {

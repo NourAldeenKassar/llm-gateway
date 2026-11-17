@@ -2,10 +2,11 @@ import { Injectable, Logger, HttpException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProviderFactory } from '../providers/provider.factory';
 import { LlmRequest, LlmResponse } from '../providers/provider.interface';
+import { AccessTier, tierAllowsProvider } from '../providers/tier';
 
 export interface RouteOptions {
   provider?: string;
-  freeOnly?: boolean;
+  tier?: AccessTier;
   source?: string;
   apiKeyName?: string;
 }
@@ -23,6 +24,8 @@ export class RouterService {
     request: LlmRequest,
     options: RouteOptions,
   ): Promise<LlmResponse> {
+    const tier = options.tier ?? 'free';
+
     if (options.provider) {
       const provider = await this.providerFactory.getProviderByName(
         options.provider,
@@ -31,6 +34,16 @@ export class RouterService {
         throw new HttpException(
           { error: `Provider "${options.provider}" not found or disabled` },
           404,
+        );
+      }
+
+      if (!tierAllowsProvider(tier, provider.isPaid)) {
+        throw new HttpException(
+          {
+            error: `Provider "${provider.name}" is not available on the "${tier}" tier`,
+            tier,
+          },
+          403,
         );
       }
 
@@ -62,12 +75,11 @@ export class RouterService {
       }
     }
 
-    const freeOnly = await this.resolveFreeOnly(options.freeOnly);
-    const providers = await this.providerFactory.getEnabledProviders(freeOnly);
+    const providers = await this.providerFactory.getEnabledProviders(tier);
 
     if (providers.length === 0) {
       throw new HttpException(
-        { error: 'No providers available', freeOnly },
+        { error: `No providers available on the "${tier}" tier`, tier },
         503,
       );
     }
@@ -110,21 +122,9 @@ export class RouterService {
     }
 
     throw new HttpException(
-      { error: 'All providers failed', providers_tried: errors },
+      { error: 'All providers failed', tier, providers_tried: errors },
       503,
     );
-  }
-
-  private async resolveFreeOnly(
-    requestFreeOnly?: boolean,
-  ): Promise<boolean> {
-    if (requestFreeOnly !== undefined) return requestFreeOnly;
-
-    const config = await this.prisma.gatewayConfig.findUnique({
-      where: { id: 'default' },
-    });
-
-    return config?.freeOnlyDefault ?? true;
   }
 
   private isRateLimitError(error: unknown): boolean {

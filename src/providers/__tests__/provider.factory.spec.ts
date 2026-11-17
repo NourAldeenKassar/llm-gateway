@@ -77,13 +77,46 @@ describe('ProviderFactory', () => {
     it('returns enabled providers sorted by priority', async () => {
       mockPrisma.provider.findMany.mockResolvedValue([groqConfig, geminiConfig]);
 
-      const providers = await factory.getEnabledProviders();
+      const providers = await factory.getEnabledProviders('any');
 
       expect(providers).toHaveLength(2);
       expect(providers[0].name).toBe('groq');
       expect(providers[1].name).toBe('gemini');
       expect(mockPrisma.provider.findMany).toHaveBeenCalledWith({
         where: { enabled: true },
+        orderBy: { priority: 'asc' },
+      });
+    });
+
+    it('filters to free providers for the free tier', async () => {
+      mockPrisma.provider.findMany.mockResolvedValue([groqConfig]);
+
+      await factory.getEnabledProviders('free');
+
+      expect(mockPrisma.provider.findMany).toHaveBeenCalledWith({
+        where: { enabled: true, isPaid: false },
+        orderBy: { priority: 'asc' },
+      });
+    });
+
+    it('filters to paid providers for the paid tier', async () => {
+      mockPrisma.provider.findMany.mockResolvedValue([]);
+
+      await factory.getEnabledProviders('paid');
+
+      expect(mockPrisma.provider.findMany).toHaveBeenCalledWith({
+        where: { enabled: true, isPaid: true },
+        orderBy: { priority: 'asc' },
+      });
+    });
+
+    it('defaults to the free tier when no tier is given', async () => {
+      mockPrisma.provider.findMany.mockResolvedValue([groqConfig]);
+
+      await factory.getEnabledProviders();
+
+      expect(mockPrisma.provider.findMany).toHaveBeenCalledWith({
+        where: { enabled: true, isPaid: false },
         orderBy: { priority: 'asc' },
       });
     });

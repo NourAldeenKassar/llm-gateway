@@ -4,6 +4,7 @@ import { LlmProvider } from './provider.interface';
 import { OpenAICompatProvider } from './openai-compat.provider';
 import { GeminiProvider } from './gemini.provider';
 import { Provider } from '@prisma/client';
+import { AccessTier } from './tier';
 
 @Injectable()
 export class ProviderFactory {
@@ -33,11 +34,11 @@ export class ProviderFactory {
     }
   }
 
-  async getEnabledProviders(freeOnly?: boolean): Promise<LlmProvider[]> {
+  async getEnabledProviders(tier: AccessTier = 'free'): Promise<LlmProvider[]> {
     const configs = await this.prisma.provider.findMany({
       where: {
         enabled: true,
-        ...(freeOnly && { isPaid: false }),
+        ...(tier !== 'any' && { isPaid: tier === 'paid' }),
       },
       orderBy: { priority: 'asc' },
     });

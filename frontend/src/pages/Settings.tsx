@@ -2,10 +2,16 @@ import { useState, useEffect } from 'react'
 import {
   getConfig, updateConfig, listProviders, changePassword,
   listApiKeys, createApiKey, updateApiKey, deleteApiKey,
-  type GatewayConfig, type Provider, type ApiKey,
+  type GatewayConfig, type Provider, type ApiKey, type AccessTier,
 } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Plus, Trash2, Copy, Check } from 'lucide-react'
+
+const TIERS: { value: AccessTier; label: string; hint: string; activeClass: string }[] = [
+  { value: 'free', label: 'Free', hint: 'Free providers only', activeClass: 'bg-success/15 text-success' },
+  { value: 'paid', label: 'Paid', hint: 'Paid providers only', activeClass: 'bg-warning/15 text-warning' },
+  { value: 'any', label: 'Any', hint: 'Free and paid, in priority order', activeClass: 'bg-primary/15 text-primary' },
+]
 
 export default function Settings() {
   const [config, setConfig] = useState<GatewayConfig | null>(null)
@@ -19,6 +25,7 @@ export default function Settings() {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
   const [newKeyName, setNewKeyName] = useState('')
   const [newKeyExpiry, setNewKeyExpiry] = useState('')
+  const [newKeyTier, setNewKeyTier] = useState<AccessTier>('free')
   const [createdKey, setCreatedKey] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -67,10 +74,11 @@ export default function Settings() {
 
   const handleCreateKey = async () => {
     if (!newKeyName.trim()) return
-    const key = await createApiKey(newKeyName.trim(), newKeyExpiry || undefined)
+    const key = await createApiKey(newKeyName.trim(), newKeyTier, newKeyExpiry || undefined)
     setCreatedKey(key.key)
     setNewKeyName('')
     setNewKeyExpiry('')
+    setNewKeyTier('free')
     loadApiKeys()
   }
 
@@ -84,6 +92,11 @@ export default function Settings() {
 
   const handleToggleKey = async (id: string, enabled: boolean) => {
     await updateApiKey(id, { enabled: !enabled })
+    loadApiKeys()
+  }
+
+  const handleChangeTier = async (id: string, tier: AccessTier) => {
+    await updateApiKey(id, { tier })
     loadApiKeys()
   }
 
@@ -144,6 +157,33 @@ export default function Settings() {
             </button>
           </div>
 
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs text-muted-foreground">Tier</span>
+            <div className="flex items-center rounded-md border border-border overflow-hidden">
+              {TIERS.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setNewKeyTier(t.value)}
+                  title={t.hint}
+                  className={cn(
+                    'text-xs px-2.5 py-1 transition-colors',
+                    newKeyTier === t.value
+                      ? t.activeClass
+                      : 'text-muted-foreground hover:bg-muted',
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground mb-4">
+            The tier decides which providers this key may reach. Free keys can never
+            use a paid provider, and paid keys never fall back to a free one.
+          </p>
+
           {apiKeys.length > 0 && (
             <div className="space-y-2">
               {apiKeys.map((k) => (
@@ -161,6 +201,24 @@ export default function Settings() {
                         <span className="text-destructive ml-2">Expired</span>
                       )}
                     </div>
+                  </div>
+                  <div className="flex items-center rounded-md border border-border overflow-hidden shrink-0">
+                    {TIERS.map((t) => (
+                      <button
+                        key={t.value}
+                        type="button"
+                        onClick={() => handleChangeTier(k.id, t.value)}
+                        title={t.hint}
+                        className={cn(
+                          'text-xs px-2.5 py-1 transition-colors',
+                          k.tier === t.value
+                            ? t.activeClass
+                            : 'text-muted-foreground hover:bg-muted',
+                        )}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
                   </div>
                   <button
                     onClick={() => handleToggleKey(k.id, k.enabled)}
@@ -211,9 +269,10 @@ export default function Settings() {
         <div className="border border-border rounded-lg p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">Free only by default</p>
+              <p className="text-sm font-medium">New keys default to free</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Requests without an explicit setting will only use free-tier providers. Apps can override this with the freeOnly parameter.
+                Sets the tier a newly created API key gets when none is chosen. Turn this
+                off to default new keys to Any instead.
               </p>
             </div>
             <button

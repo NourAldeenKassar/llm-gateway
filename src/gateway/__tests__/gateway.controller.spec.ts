@@ -32,7 +32,7 @@ describe('GatewayController', () => {
 
     await controller.generate(
       { prompt: 'hello' } as never,
-      'test-app',
+      { name: 'test-app', tier: 'free' },
     );
 
     expect(mockRouter.route).toHaveBeenCalledWith(
@@ -52,7 +52,7 @@ describe('GatewayController', () => {
 
     await controller.generate(
       { prompt: 'hello', system: 'be brief' } as never,
-      'test-app',
+      { name: 'test-app', tier: 'free' },
     );
 
     expect(mockRouter.route).toHaveBeenCalledWith(
@@ -66,7 +66,7 @@ describe('GatewayController', () => {
     );
   });
 
-  it('passes freeOnly to router', async () => {
+  it('passes the api key tier to the router', async () => {
     mockRouter.route.mockResolvedValue({
       content: 'hi',
       provider: 'groq',
@@ -74,13 +74,31 @@ describe('GatewayController', () => {
     });
 
     await controller.generate(
-      { prompt: 'hello', freeOnly: true } as never,
-      'test-app',
+      { prompt: 'hello' } as never,
+      { name: 'premium-app', tier: 'paid' },
     );
 
     expect(mockRouter.route).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ freeOnly: true }),
+      expect.objectContaining({ tier: 'paid', apiKeyName: 'premium-app' }),
+    );
+  });
+
+  it('ignores any tier hint in the request body', async () => {
+    mockRouter.route.mockResolvedValue({
+      content: 'hi',
+      provider: 'groq',
+      model: 'llama-3',
+    });
+
+    await controller.generate(
+      { prompt: 'hello', freeOnly: false, tier: 'paid' } as never,
+      { name: 'free-app', tier: 'free' },
+    );
+
+    expect(mockRouter.route).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ tier: 'free' }),
     );
   });
 
@@ -93,7 +111,7 @@ describe('GatewayController', () => {
 
     const result = await controller.generate(
       { prompt: 'hello' } as never,
-      'test-app',
+      { name: 'test-app', tier: 'free' },
     );
 
     expect(result).toEqual({
@@ -113,7 +131,7 @@ describe('GatewayController', () => {
 
     const result = await controller.generate(
       { prompt: 'hello' } as never,
-      'test-app',
+      { name: 'test-app', tier: 'free' },
     );
 
     expect(result.failedProviders).toEqual([
