@@ -11,10 +11,12 @@ import { RefreshCw, ChevronRight, AlertTriangle, Timer, Activity, CheckCircle2 }
 import { cn } from '@/lib/utils'
 import ProviderIcon from '@/components/ProviderIcon'
 
+// Light and dark steps are defined (and colour-vision validated) as tokens in
+// index.css, so the chart follows the theme without re-rendering.
 const STATUS = {
-  success: { color: '#15803d', label: 'Success' },
-  rateLimited: { color: '#f59e0b', label: 'Rate limited' },
-  errors: { color: '#ef4444', label: 'Error' },
+  success: { color: 'var(--color-chart-success)', label: 'Success' },
+  rateLimited: { color: 'var(--color-chart-warning)', label: 'Rate limited' },
+  errors: { color: 'var(--color-chart-error)', label: 'Error' },
 } as const
 
 const RANGES: { value: MonitoringRange; label: string }[] = [

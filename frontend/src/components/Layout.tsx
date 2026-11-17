@@ -1,13 +1,19 @@
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
-import { LayoutDashboard, Settings, Cpu, MessageSquare, BookOpen, Activity, LogOut } from 'lucide-react'
+import { LayoutDashboard, Settings, Cpu, MessageSquare, BookOpen, Activity, LogOut, Sun, Moon } from 'lucide-react'
 import { logout } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { getTheme, applyTheme, type Theme } from '@/lib/theme'
 
 interface LayoutProps {
   onLogout: () => void
 }
 
 export default function Layout({ onLogout }: LayoutProps) {
+  const [theme, setTheme] = useState<Theme>(getTheme)
+
+  useEffect(() => { applyTheme(theme) }, [theme])
+
   const handleLogout = async () => {
     await logout()
     onLogout()
@@ -50,6 +56,15 @@ export default function Layout({ onLogout }: LayoutProps) {
             </NavLink>
           ))}
         </nav>
+
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+        </button>
 
         <button
           onClick={handleLogout}

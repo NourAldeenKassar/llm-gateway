@@ -10,11 +10,12 @@ Self-hosted API gateway that routes requests to multiple LLM providers with auto
 - **Per-app API keys** -- create API keys for each app with a tier and optional expiry, track usage per app
 - **Admin dashboard** -- add/remove providers, configure priorities, inline editing, provider health checks
 - **Chat playground** -- test providers directly from the dashboard with conversation history and markdown rendering
-- **Monitoring** -- per-provider usage stats, request logs with in/out tokens, latency tracking, rate limit detection
+- **Monitoring** -- success rate, p95 latency and traffic over time across 1h/24h/7d, per-provider health, per-app token usage by tier, and the error behind every failed request
 - **Model browser** -- lists available models from each provider's API
 - **Health checks** -- manually trigger health checks across all providers with latency tracking
 - **Multiple accounts** -- add the same provider multiple times with different API keys
 - **API documentation** -- built-in docs page with endpoint reference and curl examples
+- **Dark mode** -- follows your system setting, switchable from the sidebar, remembered per browser
 
 ## Tested Providers
 

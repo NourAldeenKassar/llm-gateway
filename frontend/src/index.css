@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-background: #ffffff;
   --color-foreground: #0a0a0a;
@@ -12,11 +14,48 @@
   --color-destructive-foreground: #ffffff;
   --color-success: #22c55e;
   --color-warning: #f59e0b;
+  --color-code-bg: #1a1a2e;
+  --color-code-fg: #d1d5db;
+  --color-link: #3b82f6;
+  --color-chart-success: #15803d;
+  --color-chart-warning: #f59e0b;
+  --color-chart-error: #ef4444;
   --font-sans: "Inter", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
+}
+
+/* Dark theme. Redefining the tokens flips every utility that resolves
+   through them, so components need no dark: variants. Chart colours are a
+   separate, validated set rather than a lightened copy of the light ones. */
+:root.dark {
+  --color-background: #0d0e18;
+  --color-foreground: #e9e9f0;
+  --color-muted: #1a1c2b;
+  --color-muted-foreground: #9b9bb0;
+  --color-border: #343852;
+  --color-primary: #e9e9f0;
+  --color-primary-foreground: #0d0e18;
+  --color-destructive: #f87171;
+  --color-destructive-foreground: #0d0e18;
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-code-bg: #111320;
+  --color-code-fg: #d1d5db;
+  --color-link: #7dabf8;
+  --color-chart-success: #16a34a;
+  --color-chart-warning: #d97706;
+  --color-chart-error: #e11d48;
+}
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 body {
@@ -34,8 +73,8 @@ body {
 .chat-markdown pre {
   word-break: normal;
   overflow-wrap: normal;
-  background: #1a1a2e;
-  color: #d1d5db;
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
   margin: 0.5rem 0;
@@ -54,8 +93,8 @@ body {
 }
 
 .chat-markdown code {
-  background: #1a1a2e;
-  color: #d1d5db;
+  background: var(--color-code-bg);
+  color: var(--color-code-fg);
   padding: 0.15rem 0.4rem;
   border-radius: 0.25rem;
   font-size: 0.75rem;
@@ -111,6 +150,6 @@ body {
 }
 
 .chat-markdown a {
-  color: #3b82f6;
+  color: var(--color-link);
   text-decoration: underline;
 }

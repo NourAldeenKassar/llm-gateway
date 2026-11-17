@@ -8,6 +8,20 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
     <title>LLM Gateway</title>
+    <script>
+      // Applied before first paint so the page never flashes light then dark.
+      (function () {
+        try {
+          var stored = localStorage.getItem('llm-gateway-theme');
+          var dark = stored
+            ? stored === 'dark'
+            : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {
+          /* storage blocked: fall back to light */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

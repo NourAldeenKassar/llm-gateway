@@ -62,8 +62,8 @@ const endpoints = [
 ]
 
 const methodColors: Record<string, string> = {
-  GET: 'bg-blue-500/15 text-blue-600 border-blue-500/20',
-  POST: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20',
+  GET: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/20',
+  POST: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
 }
 
 export default function Docs() {
@@ -99,7 +99,7 @@ export default function Docs() {
             {ep.request && (
               <div className="space-y-5 mb-5">
                 <Section title="Headers">
-                  <div className="bg-[#1a1a2e] rounded-lg p-4 font-[family-name:var(--font-mono)] text-[13px] leading-relaxed">
+                  <div className="bg-code-bg border border-border rounded-lg p-4 font-[family-name:var(--font-mono)] text-[13px] leading-relaxed">
                     {Object.entries(ep.request.headers).map(([key, value]) => (
                       <div key={key}>
                         <span className="text-blue-400">{key}</span>
@@ -132,14 +132,14 @@ export default function Docs() {
             )}
 
             <Section title="Example">
-              <pre className="bg-[#1a1a2e] text-emerald-400 rounded-lg p-4 font-[family-name:var(--font-mono)] text-[13px] leading-relaxed overflow-x-auto">
+              <pre className="bg-code-bg border border-border text-emerald-400 rounded-lg p-4 font-[family-name:var(--font-mono)] text-[13px] leading-relaxed overflow-x-auto">
                 {ep.example}
               </pre>
             </Section>
 
             <div className="mt-5">
               <Section title="Response">
-                <pre className="bg-[#1a1a2e] text-gray-300 rounded-lg p-4 font-[family-name:var(--font-mono)] text-[13px] leading-relaxed overflow-x-auto">
+                <pre className="bg-code-bg border border-border text-code-fg rounded-lg p-4 font-[family-name:var(--font-mono)] text-[13px] leading-relaxed overflow-x-auto">
                   {ep.response}
                 </pre>
               </Section>
