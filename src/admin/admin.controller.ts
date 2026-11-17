@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -328,86 +329,202 @@ export class AdminController {
 
   @Get('monitoring')
   @UseGuards(AdminGuard)
-  async getMonitoring() {
+  async getMonitoring(@Query('range') range?: string) {
+    const windows: Record<string, { ms: number; buckets: number }> = {
+      '1h': { ms: 60 * 60 * 1000, buckets: 12 },
+      '24h': { ms: 24 * 60 * 60 * 1000, buckets: 24 },
+      '7d': { ms: 7 * 24 * 60 * 60 * 1000, buckets: 28 },
+    };
+    const rangeKey = range && windows[range] ? range : '24h';
+    const win = windows[rangeKey];
+
     const now = new Date();
-    const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const start = new Date(now.getTime() - win.ms);
+    const prevStart = new Date(now.getTime() - win.ms * 2);
+    const bucketSeconds = Math.round(win.ms / win.buckets / 1000);
 
     const [
-      totalToday,
-      totalWeek,
-      lastMinute,
-      lastHour,
-      rateLimitsToday,
-      errorsToday,
-      providerStats,
+      summaryRows,
+      prevRows,
+      seriesRows,
+      providerRows,
+      appRows,
+      recentFailures,
       recentLogs,
     ] = await Promise.all([
-      this.prisma.requestLog.count({ where: { createdAt: { gte: oneDayAgo } } }),
-      this.prisma.requestLog.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
-      this.prisma.requestLog.count({ where: { createdAt: { gte: oneMinuteAgo } } }),
-      this.prisma.requestLog.count({ where: { createdAt: { gte: oneHourAgo } } }),
-      this.prisma.requestLog.count({
-        where: { createdAt: { gte: oneDayAgo }, status: 'rate_limited' },
-      }),
-      this.prisma.requestLog.count({
-        where: { createdAt: { gte: oneDayAgo }, status: 'error' },
-      }),
+      this.prisma.$queryRaw<SummaryRow[]>`
+        SELECT
+          COUNT(*)::int AS total,
+          COUNT(*) FILTER (WHERE status = 'success')::int AS success,
+          COUNT(*) FILTER (WHERE status = 'error')::int AS errors,
+          COUNT(*) FILTER (WHERE status = 'rate_limited')::int AS rate_limited,
+          COALESCE(ROUND(AVG("latencyMs")), 0)::int AS avg_latency,
+          COALESCE(ROUND(percentile_cont(0.95) WITHIN GROUP (
+            ORDER BY "latencyMs"::double precision)), 0)::int AS p95_latency,
+          COALESCE(SUM("totalTokens"), 0)::int AS total_tokens
+        FROM "RequestLog"
+        WHERE "createdAt" >= ${start}
+      `,
+      this.prisma.$queryRaw<SummaryRow[]>`
+        SELECT
+          COUNT(*)::int AS total,
+          COUNT(*) FILTER (WHERE status = 'success')::int AS success,
+          COUNT(*) FILTER (WHERE status = 'error')::int AS errors,
+          COUNT(*) FILTER (WHERE status = 'rate_limited')::int AS rate_limited,
+          COALESCE(ROUND(AVG("latencyMs")), 0)::int AS avg_latency,
+          COALESCE(ROUND(percentile_cont(0.95) WITHIN GROUP (
+            ORDER BY "latencyMs"::double precision)), 0)::int AS p95_latency,
+          COALESCE(SUM("totalTokens"), 0)::int AS total_tokens
+        FROM "RequestLog"
+        WHERE "createdAt" >= ${prevStart} AND "createdAt" < ${start}
+      `,
+      this.prisma.$queryRaw<
+        { idx: number; success: number; rate_limited: number; errors: number }[]
+      >`
+        SELECT
+          floor(extract(epoch FROM "createdAt" - ${start}::timestamptz)
+            / ${bucketSeconds})::int AS idx,
+          COUNT(*) FILTER (WHERE status = 'success')::int AS success,
+          COUNT(*) FILTER (WHERE status = 'rate_limited')::int AS rate_limited,
+          COUNT(*) FILTER (WHERE status = 'error')::int AS errors
+        FROM "RequestLog"
+        WHERE "createdAt" >= ${start}
+        GROUP BY idx
+        ORDER BY idx
+      `,
       this.prisma.$queryRaw<
         {
           provider: string;
           model: string;
-          total: bigint;
-          success: bigint;
-          errors: bigint;
-          rate_limited: bigint;
+          total: number;
+          success: number;
+          errors: number;
+          rate_limited: number;
           avg_latency: number;
-          last_minute: bigint;
-          last_hour: bigint;
+          p95_latency: number;
+          total_tokens: number;
         }[]
       >`
         SELECT
           provider,
           model,
-          COUNT(*) as total,
-          COUNT(*) FILTER (WHERE status = 'success') as success,
-          COUNT(*) FILTER (WHERE status = 'error') as errors,
-          COUNT(*) FILTER (WHERE status = 'rate_limited') as rate_limited,
-          ROUND(AVG(CAST("latencyMs" AS numeric))) as avg_latency,
-          COUNT(*) FILTER (WHERE "createdAt" > ${oneMinuteAgo}) as last_minute,
-          COUNT(*) FILTER (WHERE "createdAt" > ${oneHourAgo}) as last_hour
+          COUNT(*)::int AS total,
+          COUNT(*) FILTER (WHERE status = 'success')::int AS success,
+          COUNT(*) FILTER (WHERE status = 'error')::int AS errors,
+          COUNT(*) FILTER (WHERE status = 'rate_limited')::int AS rate_limited,
+          COALESCE(ROUND(AVG("latencyMs")), 0)::int AS avg_latency,
+          COALESCE(ROUND(percentile_cont(0.95) WITHIN GROUP (
+            ORDER BY "latencyMs"::double precision)), 0)::int AS p95_latency,
+          COALESCE(SUM("totalTokens"), 0)::int AS total_tokens
         FROM "RequestLog"
-        WHERE "createdAt" > ${sevenDaysAgo}
+        WHERE "createdAt" >= ${start}
         GROUP BY provider, model
         ORDER BY total DESC
       `,
+      this.prisma.$queryRaw<
+        {
+          app: string;
+          tier: string | null;
+          requests: number;
+          failures: number;
+          prompt_tokens: number;
+          completion_tokens: number;
+          total_tokens: number;
+        }[]
+      >`
+        SELECT
+          COALESCE(l."apiKeyName", l.source, 'unknown') AS app,
+          k.tier AS tier,
+          COUNT(*)::int AS requests,
+          COUNT(*) FILTER (WHERE l.status <> 'success')::int AS failures,
+          COALESCE(SUM(l."promptTokens"), 0)::int AS prompt_tokens,
+          COALESCE(SUM(l."completionTokens"), 0)::int AS completion_tokens,
+          COALESCE(SUM(l."totalTokens"), 0)::int AS total_tokens
+        FROM "RequestLog" l
+        LEFT JOIN (
+          SELECT name, MIN(tier) AS tier FROM "ApiKey" GROUP BY name
+        ) k ON k.name = l."apiKeyName"
+        WHERE l."createdAt" >= ${start}
+        GROUP BY 1, 2
+        ORDER BY requests DESC
+      `,
+      this.prisma.requestLog.findMany({
+        where: { createdAt: { gte: start }, status: { not: 'success' } },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
       this.prisma.requestLog.findMany({
         orderBy: { createdAt: 'desc' },
         take: 50,
       }),
     ]);
 
+    const summary = summaryRows[0];
+    const prev = prevRows[0];
+
+    const points = Array.from({ length: win.buckets }, (_, i) => ({
+      t: new Date(start.getTime() + i * bucketSeconds * 1000).toISOString(),
+      success: 0,
+      rateLimited: 0,
+      errors: 0,
+    }));
+    for (const row of seriesRows) {
+      const idx = Math.min(Math.max(row.idx, 0), points.length - 1);
+      points[idx].success += row.success;
+      points[idx].rateLimited += row.rate_limited;
+      points[idx].errors += row.errors;
+    }
+
+    const rate = (s: SummaryRow) =>
+      s.total > 0 ? Math.round((s.success / s.total) * 1000) / 10 : null;
+
     return {
-      overview: {
-        requestsToday: totalToday,
-        requestsThisWeek: totalWeek,
-        requestsLastMinute: lastMinute,
-        requestsLastHour: lastHour,
-        rateLimitsToday,
-        errorsToday,
+      range: rangeKey,
+      startedAt: start.toISOString(),
+      kpis: {
+        requests: summary.total,
+        successRate: rate(summary),
+        avgLatency: summary.avg_latency,
+        p95Latency: summary.p95_latency,
+        errors: summary.errors,
+        rateLimited: summary.rate_limited,
+        failures: summary.errors + summary.rate_limited,
+        totalTokens: summary.total_tokens,
+        prevRequests: prev.total,
+        prevSuccessRate: rate(prev),
       },
-      providerStats: providerStats.map((s) => ({
+      series: { bucketSeconds, points },
+      providerStats: providerRows.map((s) => ({
         provider: s.provider,
         model: s.model,
-        total: Number(s.total),
-        success: Number(s.success),
-        errors: Number(s.errors),
-        rateLimited: Number(s.rate_limited),
-        avgLatency: Number(s.avg_latency),
-        lastMinute: Number(s.last_minute),
-        lastHour: Number(s.last_hour),
+        total: s.total,
+        success: s.success,
+        errors: s.errors,
+        rateLimited: s.rate_limited,
+        avgLatency: s.avg_latency,
+        p95Latency: s.p95_latency,
+        totalTokens: s.total_tokens,
+        successRate:
+          s.total > 0 ? Math.round((s.success / s.total) * 1000) / 10 : null,
+      })),
+      appStats: appRows.map((a) => ({
+        app: a.app,
+        tier: a.tier,
+        requests: a.requests,
+        failures: a.failures,
+        promptTokens: a.prompt_tokens,
+        completionTokens: a.completion_tokens,
+        totalTokens: a.total_tokens,
+      })),
+      recentFailures: recentFailures.map((l) => ({
+        id: l.id,
+        provider: l.provider,
+        model: l.model,
+        status: l.status,
+        error: l.error,
+        apiKeyName: l.apiKeyName,
+        source: l.source,
+        createdAt: l.createdAt,
       })),
       recentLogs: recentLogs.map((l) => ({
         id: l.id,
@@ -536,6 +653,16 @@ export class AdminController {
     });
     return config?.freeOnlyDefault === false ? 'any' : 'free';
   }
+}
+
+interface SummaryRow {
+  total: number;
+  success: number;
+  errors: number;
+  rate_limited: number;
+  avg_latency: number;
+  p95_latency: number;
+  total_tokens: number;
 }
 
 function assertTier(value: string): AccessTier {

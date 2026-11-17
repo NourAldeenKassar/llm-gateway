@@ -193,18 +193,6 @@ export async function runHealthCheck(): Promise<HealthStatus> {
   return data
 }
 
-export interface ProviderStat {
-  provider: string
-  model: string
-  total: number
-  success: number
-  errors: number
-  rateLimited: number
-  avgLatency: number
-  lastMinute: number
-  lastHour: number
-}
-
 export interface RequestLogEntry {
   id: string
   provider: string
@@ -220,20 +208,74 @@ export interface RequestLogEntry {
   createdAt: string
 }
 
+export type MonitoringRange = '1h' | '24h' | '7d'
+
+export interface MonitoringKpis {
+  requests: number
+  successRate: number | null
+  avgLatency: number
+  p95Latency: number
+  errors: number
+  rateLimited: number
+  failures: number
+  totalTokens: number
+  prevRequests: number
+  prevSuccessRate: number | null
+}
+
+export interface SeriesPoint {
+  t: string
+  success: number
+  rateLimited: number
+  errors: number
+}
+
+export interface ProviderHealthStat {
+  provider: string
+  model: string
+  total: number
+  success: number
+  errors: number
+  rateLimited: number
+  avgLatency: number
+  p95Latency: number
+  totalTokens: number
+  successRate: number | null
+}
+
+export interface AppStat {
+  app: string
+  tier: AccessTier | null
+  requests: number
+  failures: number
+  promptTokens: number
+  completionTokens: number
+  totalTokens: number
+}
+
+export interface FailureEntry {
+  id: string
+  provider: string
+  model: string
+  status: string
+  error: string | null
+  apiKeyName: string | null
+  source: string | null
+  createdAt: string
+}
+
 export interface MonitoringData {
-  overview: {
-    requestsToday: number
-    requestsThisWeek: number
-    requestsLastMinute: number
-    requestsLastHour: number
-    rateLimitsToday: number
-    errorsToday: number
-  }
-  providerStats: ProviderStat[]
+  range: MonitoringRange
+  startedAt: string
+  kpis: MonitoringKpis
+  series: { bucketSeconds: number; points: SeriesPoint[] }
+  providerStats: ProviderHealthStat[]
+  appStats: AppStat[]
+  recentFailures: FailureEntry[]
   recentLogs: RequestLogEntry[]
 }
 
-export async function getMonitoring(): Promise<MonitoringData> {
-  const { data } = await api.get('/api/admin/monitoring')
+export async function getMonitoring(range: MonitoringRange = '24h'): Promise<MonitoringData> {
+  const { data } = await api.get('/api/admin/monitoring', { params: { range } })
   return data
 }
